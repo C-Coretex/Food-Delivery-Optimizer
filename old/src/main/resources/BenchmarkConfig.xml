@@ -7,13 +7,13 @@
         <solver>
             <environmentMode>PHASE_ASSERT</environmentMode>
             <!-- Define the model -->
-            <solutionClass>domain.EVRPsolution</solutionClass>
-            <entityClass>domain.Vehicle</entityClass>
-            <entityClass>domain.Visit</entityClass>
+            <solutionClass>lv.lu.eztf.dn.combopt.evrp.domain.EVRPsolution</solutionClass>
+            <entityClass>lv.lu.eztf.dn.combopt.evrp.domain.Vehicle</entityClass>
+            <entityClass>lv.lu.eztf.dn.combopt.evrp.domain.Visit</entityClass>
 
             <!-- Define the score function -->
             <scoreDirectorFactory>
-                <constraintProviderClass>ConstraintStreamCostFunction</constraintProviderClass>
+                <constraintProviderClass>lv.lu.eztf.dn.combopt.evrp.solver.ConstraintStreamCostFunction</constraintProviderClass>
             </scoreDirectorFactory>
 
             <!-- Configure the optimization algorithms (optional) -->
@@ -24,7 +24,7 @@
             <constructionHeuristic />
         </solver>
         <problemBenchmarks>
-            <solutionFileIOClass>domain.JsonIO</solutionFileIOClass>
+            <solutionFileIOClass>lv.lu.eztf.dn.combopt.evrp.domain.JsonIO</solutionFileIOClass>
             <writeOutputSolutionEnabled>true</writeOutputSolutionEnabled>
             <inputSolutionFile>data/problem_10.json</inputSolutionFile>
             <inputSolutionFile>data/problem_25.json</inputSolutionFile>

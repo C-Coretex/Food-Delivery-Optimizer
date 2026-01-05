@@ -1,12 +1,21 @@
-package domain;
+package lv.lu.eztf.dn.combopt.evrp.domain;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.graphhopper.util.shapes.GHPoint;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Setter @Getter @AllArgsConstructor @NoArgsConstructor
+@JsonIdentityInfo(scope = Location.class,
+    property = "id", generator = ObjectIdGenerators.PropertyGenerator.class)
 public class Location {
     static Double SPEED = 50.0;
     Long id;
