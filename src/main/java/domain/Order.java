@@ -18,6 +18,7 @@ public class Order {
 
     @PlanningVariable(valueRangeProviderRefs = "courierRange")
     private CourierShift courierShift;
+    private Restaurant restaurant;
 
     public Order() {}
 

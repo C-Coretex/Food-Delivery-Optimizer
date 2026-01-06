@@ -12,6 +12,7 @@ public class Food {
 
     @PlanningId
     private String id;
+    private String chainId;
     private int volume;
     private int prepTimeMinutes;
     private int maxDeliveryMinutes;

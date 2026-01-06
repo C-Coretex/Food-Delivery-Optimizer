@@ -7,7 +7,7 @@
         <solver>
             <environmentMode>PHASE_ASSERT</environmentMode>
             <!-- Define the model -->
-            <solutionClass>domain.EVRPsolution</solutionClass>
+            <solutionClass>domain.DeliverySolution</solutionClass>
             <entityClass>domain.Vehicle</entityClass>
             <entityClass>domain.Visit</entityClass>
 
