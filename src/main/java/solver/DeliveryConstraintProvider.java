@@ -42,7 +42,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 // Join with the Restaurant visit of the SAME order
                 .join(Visit.class,
                         Joiners.equal(Visit::getOrder),
-                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
+                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))//get the pair only if second entity is restaurant (first then will always be customer)
                 // Now we have both CLONED instances currently managed by the solver
                 .filter((cust, rest) -> cust.getCourier() != null && (rest.getCourier() == null
                         || !cust.getCourier().getId().equals(rest.getCourier().getId())))
