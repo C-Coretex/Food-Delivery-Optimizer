@@ -9,7 +9,8 @@
 
     <!-- MODEL -->
     <solutionClass>domain.DeliverySolution</solutionClass>
-    <entityClass>domain.Order</entityClass>
+    <entityClass>domain.CourierShift</entityClass>
+    <entityClass>domain.Visit</entityClass>
 
     <!-- SCORING -->
     <scoreDirectorFactory>

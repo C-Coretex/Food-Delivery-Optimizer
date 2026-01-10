@@ -1,13 +1,15 @@
 package domain;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
+import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Getter
-@PlanningEntity
+@Setter
 public class Order {
 
     private String id;
@@ -16,8 +18,11 @@ public class Order {
     private int latestMinute;
     private Location deliveryLocation;
 
-    @PlanningVariable(valueRangeProviderRefs = "courierRange")
-    private CourierShift courierShift;
+    @InverseRelationShadowVariable(sourceVariableName = "order")
+    private Visit restaurantVisit;
+    @InverseRelationShadowVariable(sourceVariableName = "order")
+    private Visit customerVisit;
+
     private Restaurant restaurant;
 
     public Order() {}
@@ -27,9 +32,5 @@ public class Order {
         this.earliestMinute = earliestMinute;
         this.latestMinute = latestMinute;
         this.foods = foods;
-    }
-
-    public void setCourierShift(CourierShift courierShift) {
-        this.courierShift = courierShift;
     }
 }

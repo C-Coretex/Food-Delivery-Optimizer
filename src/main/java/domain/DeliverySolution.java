@@ -8,26 +8,33 @@ import lombok.Setter;
 
 import java.util.List;
 import java.util.ArrayList;
+
 @PlanningSolution
+@Getter
+@Setter
 public class DeliverySolution {
 
+    @PlanningEntityCollectionProperty
+    private List<CourierShift> courierShifts;
+
+    @ValueRangeProvider(id = "visitList")
+    @PlanningEntityCollectionProperty
+    private List<Visit> visitList;
+
+    @PlanningScore
+    private HardSoftScore score;
+
     //must be multi-slot
+    @ProblemFactCollectionProperty
     private List<Restaurant> restaurants;
 
     @ProblemFactCollectionProperty
-    @ValueRangeProvider(id = "courierRange")
-    private List<CourierShift> courierShifts;
-
     private List<Food> Foods;
 
-    @Getter
-    @PlanningEntityCollectionProperty
+    @ProblemFactCollectionProperty
     private List<Order> orders;
 
     private List<Location> Locations;
-
-    @Setter
-    private HardSoftScore score;
 
     @ProblemFactCollectionProperty
     List<Location> locationList = new ArrayList<>();
@@ -38,9 +45,4 @@ public class DeliverySolution {
         this.courierShifts = courierShifts;
         this.orders = orders;
     }
-
-    public List<CourierShift> getCourierShifts() { return courierShifts; }
-
-    @PlanningScore
-    public HardSoftScore getScore() { return score; }
 }

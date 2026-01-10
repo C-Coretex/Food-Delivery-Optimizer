@@ -8,7 +8,7 @@
             <environmentMode>PHASE_ASSERT</environmentMode>
             <!-- Define the model -->
             <solutionClass>domain.DeliverySolution</solutionClass>
-            <entityClass>domain.Vehicle</entityClass>
+            <entityClass>domain.CourierShift</entityClass>
             <entityClass>domain.Visit</entityClass>
 
             <!-- Define the score function -->

@@ -2,11 +2,15 @@ package domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.graphhopper.util.shapes.GHPoint;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
 public class Location {
     static Double SPEED = 50.0;
     Long id;

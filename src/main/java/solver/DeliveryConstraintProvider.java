@@ -9,55 +9,154 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
     @Override
     public Constraint[] defineConstraints(ConstraintFactory factory) {
         return new Constraint[] {
+                orderMustBeDelivered(factory),
+                deliveryMustBeAssigned(factory),
                 courierShiftMustCoverOrderTime(factory),
                 hotCapacityExceeded(factory),
-                coldCapacityExceeded(factory)
+                coldCapacityExceeded(factory),
+                customerDeliveryNotInTimeWindow(factory),
+                pickupBeforeDelivery(factory),
+                sameOrderSameCourier(factory)
         };
     }
 
-    // HARD: courier must be working during order window
+    /**
+     * HARD:
+     * Customer delivery must be inside order delivery window.
+     */
+    private Constraint orderMustBeDelivered(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .filter(v -> v.getCourier() == null)
+                .penalize(HardSoftScore.ofHard(50))
+                .asConstraint("Order must be delivered");
+    }
+
+    /**
+     * HARD:
+     * Both pickup and delivery visits for the same order must be assigned to the same courier.
+     */
+    private Constraint sameOrderSameCourier(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                // Join with the Restaurant visit of the SAME order
+                .join(Visit.class,
+                        Joiners.equal(Visit::getOrder),
+                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
+                // Now we have both CLONED instances currently managed by the solver
+                .filter((cust, rest) -> cust.getCourier() != null && (rest.getCourier() == null
+                        || !cust.getCourier().getId().equals(rest.getCourier().getId())))
+                .penalize(HardSoftScore.ofHard(1000))
+                .asConstraint("Order must be picked up and delivered by the same courier");
+    }
+
+    private Constraint deliveryMustBeAssigned(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .filter(v -> v.getCourier() == null)
+                .penalize(HardSoftScore.ofHard(1_000))
+                .asConstraint("Delivery must be assigned");
+    }
+
+        /**
+         * HARD:
+         * Courier shift must cover the order time window.
+         * We evaluate this on CUSTOMER visits (one per order).
+         */
     private Constraint courierShiftMustCoverOrderTime(ConstraintFactory factory) {
-        return factory.forEach(Order.class)
-                .filter(o -> o.getCourierShift() != null)
-                .filter(o ->
-                        o.getCourierShift().getStartMinute() > o.getEarliestMinute()
-                                || o.getCourierShift().getEndMinute() < o.getLatestMinute()
-                )
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .filter(v -> v.getCourier() != null)
+                .filter(v -> {
+                    CourierShift shift = v.getCourier();
+                    Order order = v.getOrder();
+                    return shift.getStartMinute() > order.getEarliestMinute()
+                            || shift.getEndMinute() < order.getLatestMinute();
+                })
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Courier shift outside order time window");
     }
 
-    // HARD: hot food volume capacity
+    /**
+     * HARD:
+     * Hot food capacity per courier shift.
+     * Sum HOT food volumes of all CUSTOMER visits in the shift.
+     */
     private Constraint hotCapacityExceeded(ConstraintFactory factory) {
-        return factory.forEach(Order.class)
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .groupBy(
-                        Order::getCourierShift,
+                        Visit::getCourier,
                         ConstraintCollectors.sum(
-                                o -> o.getFoods().stream()
+                                v -> v.getOrder().getFoods().stream()
                                         .filter(f -> f.getTemperature() == Food.Temperature.HOT)
                                         .mapToInt(Food::getVolume)
                                         .sum()
                         )
                 )
-                .filter((shift, volume) -> shift != null && volume > shift.getHotCapacity())
+                .filter((shift, volume) ->
+                        shift != null && volume > shift.getHotCapacity())
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Hot capacity exceeded");
     }
 
-    // HARD: cold food volume capacity
+    /**
+     * HARD:
+     * Cold food capacity per courier shift.
+     */
     private Constraint coldCapacityExceeded(ConstraintFactory factory) {
-        return factory.forEach(Order.class)
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .groupBy(
-                        Order::getCourierShift,
+                        Visit::getCourier,
                         ConstraintCollectors.sum(
-                                o -> o.getFoods().stream()
+                                v -> v.getOrder().getFoods().stream()
                                         .filter(f -> f.getTemperature() == Food.Temperature.COLD)
                                         .mapToInt(Food::getVolume)
                                         .sum()
                         )
                 )
-                .filter((shift, volume) -> shift != null && volume > shift.getColdCapacity())
+                .filter((shift, volume) ->
+                        shift != null && volume > shift.getColdCapacity())
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Cold capacity exceeded");
+    }
+
+    /**
+     * HARD:
+     * Customer delivery must be inside order delivery window.
+     */
+    private Constraint customerDeliveryNotInTimeWindow(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .filter(v -> v.getMinuteTime() != null)
+                .filter(v -> {
+                    int t = v.getMinuteTime();
+                    Order o = v.getOrder();
+                    return t < o.getEarliestMinute() || t > o.getLatestMinute();
+                })
+                .penalize(HardSoftScore.ONE_HARD)
+                .asConstraint("Customer delivery time window violated");
+    }
+
+    /**
+     * HARD:
+     * Pickup must occur before delivery.
+     * Ensures the customer visit comes after the restaurant visit in the route.
+     */
+    private Constraint pickupBeforeDelivery(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .join(Visit.class,
+                        Joiners.equal(Visit::getOrder, Visit::getOrder),
+                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
+                .filter((cust, rest) -> {
+                    // If times are null (unassigned), we can't compare, so skip
+                    if (cust.getMinuteTime() == null || rest.getMinuteTime() == null) return false;
+                    // Violation if Pickup Time >= Delivery Time
+                    return rest.getMinuteTime() >= cust.getMinuteTime();
+                })
+                .penalize(HardSoftScore.ofHard(1_000))
+                .asConstraint("Pickup must occur before delivery");
     }
 }
