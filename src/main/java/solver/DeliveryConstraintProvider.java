@@ -11,7 +11,6 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return new Constraint[] {
                 orderMustBeDelivered(factory),
                 orderMustBeDeliveredInTimeWindow(factory),
-                visitMustBeWithinCourierShift(factory),
                 hotCapacityExceeded(factory),
                 coldCapacityExceeded(factory),
                 pickupBeforeDelivery(factory),
@@ -62,21 +61,6 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         || !cust.getCourier().getId().equals(rest.getCourier().getId())))
                 .penalize(HardSoftScore.ofHard(1000))
                 .asConstraint("Order must be picked up and delivered by the same courier");
-    }
-
-    private Constraint visitMustBeWithinCourierShift(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
-                .filter(v -> v.getCourier() != null)
-                .filter(v -> v.getMinuteTime() != null)
-                .filter(v -> {
-                    CourierShift shift = v.getCourier();
-                    int t = v.getMinuteTime();
-                    int start = shift.getStartMinute();
-                    int end = shift.getEndMinute();
-                    return t > end;
-                })
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Visit must be within courier shift");
     }
 
     /**

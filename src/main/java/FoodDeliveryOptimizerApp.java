@@ -35,7 +35,15 @@ public class FoodDeliveryOptimizerApp {
         log.info("Final score: {}", solution.getScore());
 
         solution.getCourierShifts().forEach(shift -> {
-            log.info("Courier {} schedule:", shift.getId());
+            String startStr = shift.getStartMinute() != null
+                    ? String.format("%02d:%02d", shift.getStartMinute() / 60, shift.getStartMinute() % 60)
+                    : "UNASSIGNED";
+
+            String endStr = shift.getEndMinute() != null
+                    ? String.format("%02d:%02d", shift.getEndMinute() / 60, shift.getEndMinute() % 60)
+                    : "UNASSIGNED";
+
+            log.info("Courier {} ({}-{}) schedule:", shift.getId(), startStr, endStr);
             if (shift.getVisits().isEmpty()) {
                 log.info("  No visits assigned");
                 return;
