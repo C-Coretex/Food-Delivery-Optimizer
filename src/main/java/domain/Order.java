@@ -24,6 +24,7 @@ public class Order {
     private Visit customerVisit;
 
     private Restaurant restaurant;
+    private int minAllowedTimeToDeliver;
 
     public Order() {}
 
@@ -32,5 +33,12 @@ public class Order {
         this.earliestMinute = earliestMinute;
         this.latestMinute = latestMinute;
         this.foods = foods;
+        minAllowedTimeToDeliver = foods.stream()
+                .mapToInt(Food::getMaxDeliveryMinutes)
+                .min()
+                .orElse(Integer.MAX_VALUE);
     }
+
+
+
 }

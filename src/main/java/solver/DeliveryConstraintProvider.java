@@ -140,7 +140,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter(CourierShift::isUsed)
                 .penalize(HardSoftScore.ONE_SOFT,
                         c -> {
-                            var endTime = Math.max(c.getEndMinute(), 180)/60;
+                            var endTime = (int)Math.ceil((float)Math.max(c.getEndMinute() - c.getStartMinute(), 180)/60);
                             return EXTRA_COURIER_PENALTY + endTime * COURIER_TIME_PENALTY;
                         }
                 )
@@ -173,31 +173,26 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .join(Visit.class,
                         Joiners.equal(Visit::getOrder),
-                        Joiners.filtering((cust, rest) ->
-                                rest.getType() == Visit.VisitType.RESTAURANT))
-                .filter((cust, rest) ->
-                        cust.getMinuteTime() != null && rest.getMinuteTime() != null)
-                .penalize(HardSoftScore.ONE_HARD, (cust, rest) -> {
-                    int pickupTime = rest.getMinuteTime();
-                    int customerDeliveryTime = cust.getMinuteTime();
-
-                    if (customerDeliveryTime <= pickupTime) {
-                        return 0;
-                    }
-
-                    int allowedDeliveryTime = cust.getOrder().getFoods().stream()
-                            .mapToInt(Food::getMaxDeliveryMinutes)
-                            .min()
-                            .orElse(Integer.MAX_VALUE);
-
-                    if (allowedDeliveryTime == Integer.MAX_VALUE) {
-                        return 0;
-                    }
-
-                    int actualDeliveryTime = customerDeliveryTime - pickupTime;
-
-                    return Math.max(0, actualDeliveryTime - allowedDeliveryTime);
-                })
+                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
+                .filter((cust, rest) -> cust.getMinuteTime() != null && rest.getMinuteTime() != null)
+                .filter((cust, rest) -> calculateDeliveryTimePenalty(cust, rest) > 0)
+                .penalize(HardSoftScore.ONE_HARD, this::calculateDeliveryTimePenalty)
                 .asConstraint("Food max delivery time exceeded");
+    }
+
+    // private method that calculates the penalty
+    private int calculateDeliveryTimePenalty(Visit cust, Visit rest) {
+        int pickupTime = rest.getMinuteTime();
+        int customerDeliveryTime = cust.getMinuteTime();
+
+        if (customerDeliveryTime <= pickupTime) {
+            return 0;
+        }
+
+        int allowedDeliveryTime = cust.getOrder().getMinAllowedTimeToDeliver();
+
+        int actualDeliveryTime = customerDeliveryTime - pickupTime;
+
+        return Math.max(0, actualDeliveryTime - allowedDeliveryTime);
     }
 }
