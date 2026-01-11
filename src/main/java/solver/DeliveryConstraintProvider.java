@@ -19,7 +19,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 sameOrderSameCourier(factory),
                 minimizeCouriers(factory),
                 courierShiftDurationBetween3And6Hours(factory),
-                courierIdleGapTooLarge(factory)
+                courierIdleGapTooLarge(factory),
                 foodMaxDeliveryTimeNotExceeded(factory),
         };
     }
@@ -231,6 +231,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .penalize(HardSoftScore.ofHard(10))
 
                 .asConstraint("Courier shift too large");
+    }
     /**
      * HARD:
      * Food maximum delivery time must not be exceeded.
