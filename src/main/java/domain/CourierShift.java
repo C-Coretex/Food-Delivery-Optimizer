@@ -2,7 +2,7 @@ package domain;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import ai.timefold.solver.core.api.domain.variable.PlanningListVariable;
+import ai.timefold.solver.core.api.domain.variable.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +20,7 @@ public class CourierShift {
     private int hotCapacity;
     private int coldCapacity;
 
-    @PlanningListVariable(valueRangeProviderRefs = "visitList")
+    @PlanningListVariable(valueRangeProviderRefs = "visitList", allowsUnassignedValues = true)
     List<Visit> visits = new ArrayList<>();
 
     //public CourierShift(String c2, int i, int i1) {}

@@ -25,17 +25,18 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 coldCapacityExceeded(factory),
                 pickupBeforeDelivery(factory),
                 sameOrderSameCourier(factory),
+                deliveryRequiresPickup(factory),
 
                 //restaurant hard
                 pickupRestaurantMustMatchFoodChain(factory),
-                pickupMustHaveRestaurant(factory),
+              //  pickupMustHaveRestaurant(factory),
                 restaurantMustBeAbleToProcessOrder(factory),
-                restaurantMaxParallelCapacity(factory),
+               // restaurantMaxParallelCapacity(factory),
 
                 //soft
                 minimizeCouriers(factory),
                 minimizeTotalDistance(factory),
-                awardForIsBoostOrder(factory)
+                //awardForIsBoostOrder(factory)
         };
     }
 
@@ -63,7 +64,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Customer delivery must be inside order delivery window.
      */
     private Constraint orderMustBeDelivered(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
+        return factory.forEachIncludingUnassigned(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .filter(v -> v.getCourier() == null)
                 .penalize(HardSoftScore.ofHard(50))
@@ -78,7 +79,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .join(Visit.class, Joiners.equal(Visit::getOrder))
-                .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT)
+                .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT && v2.getCourier() != null)
                 // If one is assigned and the other isn't, OR they are assigned to different couriers
                 .filter((cust, rest) -> !Objects.equals(cust.getCourier(), rest.getCourier()))
                 .penalize(HardSoftScore.ofHard(10_000)) // Make this VERY high
@@ -91,11 +92,10 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      */
     private Constraint pickupRestaurantMustMatchFoodChain(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
-                .filter(v -> v.getRestaurant() != null)
+                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
                 .filter(v ->
                         v.getOrder().getFoods().stream()
-                                .anyMatch(f -> !f.getChainId().equals(v.getRestaurant().getChainId()))
+                                .anyMatch(f -> !f.getChainId().equals(v.getChainId()))
                 )
                 .penalize(HardSoftScore.ofHard(1_000))
                 .asConstraint("Pickup restaurant must match food chain");
@@ -105,23 +105,10 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * HARD:
      * Pickup visit must use a restaurant from the same chain as the ordered food.
      */
-    private Constraint pickupMustHaveRestaurant(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
-                .filter(v -> v.getRestaurant() == null)
-                .penalize(HardSoftScore.ofHard(1_000))
-                .asConstraint("Pickup must have restaurant");
-    }
-
-    /**
-     * HARD:
-     * Pickup visit must use a restaurant from the same chain as the ordered food.
-     */
     private Constraint restaurantMustBeAbleToProcessOrder(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
-                .filter(v -> v.getRestaurant() != null)
-                .filter(v -> !Objects.equals(v.getRestaurant().getChainId(), v.getOrder().getChainId()))
+                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
+                .filter(v -> !Objects.equals(v.getChainId(), v.getOrder().getChainId()))
                 .penalize(HardSoftScore.ofHard(1_000))
                 .asConstraint("Order must be processed in correct restaurant chain");
     }
@@ -129,13 +116,13 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
     /**
      * HARD:
      * Pickup visit must use a restaurant from the same chain as the ordered food.
-     */
+
     private Constraint restaurantMaxParallelCapacity(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getRestaurant() != null && v.getMinuteTime() != null)
+                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getMinuteTime() != null)
                 // Join visits happening at the same restaurant
                 .join(Visit.class,
-                        Joiners.equal(Visit::getRestaurant),
+                        Joiners.equal(Visit::getLocation),
                         Joiners.lessThan(Visit::getId) // Avoid double-counting (A-B and B-A) and self-comparison
                 )
                 // Filter for time overlaps
@@ -156,7 +143,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .penalize(HardSoftScore.ONE_HARD, (v1, overlapCount) -> (overlapCount + 1) - v1.getRestaurant().getParallelCookingCapacity())
                 .asConstraint("Restaurant max parallel capacity exceeded");
     }
-
+*/
     /**
      * HARD:
      * Hot food capacity per courier shift.
@@ -204,6 +191,24 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
 
     /**
      * HARD:
+     * If a customer delivery is assigned, there must be a corresponding restaurant pickup assigned.
+     * Ensures that every assigned customer visit has at least one restaurant visit for the same order.
+     */
+    private Constraint deliveryRequiresPickup(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
+                .filter(v -> v.getCourier() != null) // Customer delivery is assigned
+                .ifNotExists(Visit.class,
+                        Joiners.equal(Visit::getOrder, Visit::getOrder),
+                        Joiners.filtering((cust, rest) ->
+                                rest.getType() == Visit.VisitType.RESTAURANT &&
+                                        rest.getCourier() != null)) // No assigned restaurant pickup found
+                .penalize(HardSoftScore.ofHard(1_000))
+                .asConstraint("Delivery requires pickup");
+    }
+
+    /**
+     * HARD:
      * Pickup must occur before delivery.
      * Ensures the customer visit comes after the restaurant visit in the route.
      */
@@ -212,7 +217,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .join(Visit.class,
                         Joiners.equal(Visit::getOrder, Visit::getOrder),
-                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
+                        Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT && rest.getCourier() != null))
                 .filter((cust, rest) -> {
                     // If times are null (unassigned), we can't compare, so skip
                     if (cust.getMinuteTime() == null || rest.getMinuteTime() == null) return false;
@@ -273,14 +278,14 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .asConstraint("Courier shift must not be more than 6 hours");
     }
 
-    private static final double isBoostCoefficient = 0.15;
+   /* private static final double isBoostCoefficient = 0.15;
     private Constraint awardForIsBoostOrder(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
                 .filter(v -> v.getRestaurant() != null && v.getRestaurant().isBoost())
                 .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.floor(v.getOrder().getTotalCost() * isBoostCoefficient)*10)
                 .asConstraint("Reward for IsBoost Restaurant usage");
-    }
+    }*/
 
     /**
      * HARD:

@@ -57,11 +57,9 @@ public class FoodDeliveryOptimizerApp {
                 String timeStr = (time != null) ? String.format("%02d:%02d", time / 60, time % 60) : "UNASSIGNED";
 
                 if(visit.getType() == Visit.VisitType.RESTAURANT) {
-                    log.info("  {} Visit for Order {}({}-{}) at {} ({})",
+                    log.info("  {} Visit for Order {} at {} ({})",
                             type,
                             visit.getOrder().getId(),
-                            visit.getRestaurant().getId(),
-                            visit.getRestaurant().getChainId(),
                             timeStr,
                             visit.getLocation().getId()
                     );
@@ -122,39 +120,43 @@ public class FoodDeliveryOptimizerApp {
         CourierShift c2 = new CourierShift("C2", 8, 10);
         CourierShift c3 = new CourierShift("C3", 10, 8);
 
-        // -------- Orders (chain-based, NOT restaurant-based) --------
+        // -------- Orders --------
         Order o1 = new Order("O1", 480, 540, List.of(pizza, burger));
-        Order o2 = new Order("O2", 500, 580, List.of(salad));
-        Order o2_2 = new Order("O2_2", 500, 580, List.of(salad));
-        Order o3 = new Order("O3", 520, 600, List.of(sushi));
-        Order o4 = new Order("O4", 700, 780, List.of(pizza));
-        Order o5 = new Order("O5", 900, 980, List.of(burger));
-
         o1.setDeliveryLocation(customerA);
+
+        Order o2 = new Order("O2", 500, 580, List.of(salad));
         o2.setDeliveryLocation(customerB);
+
+        Order o2_2 = new Order("O2_2", 500, 580, List.of(salad));
         o2_2.setDeliveryLocation(customerB);
+
+        Order o3 = new Order("O3", 520, 600, List.of(sushi));
         o3.setDeliveryLocation(customerC);
+
+        Order o4 = new Order("O4", 700, 780, List.of(pizza));
         o4.setDeliveryLocation(customerA);
+
+        Order o5 = new Order("O5", 900, 980, List.of(burger));
         o5.setDeliveryLocation(customerB);
 
         // -------- Visits (restaurant chosen later by solver) --------
-        Visit o1Pickup = new Visit(o1, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o1Delivery = new Visit(o1, customerA, rA1, Visit.VisitType.CUSTOMER);
+        Visit o1Pickup = new Visit(o1, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA");
+        Visit o1Delivery = new Visit(o1, customerA, Visit.VisitType.CUSTOMER, "ChainA");
 
-        Visit o2Pickup = new Visit(o2, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o2Delivery = new Visit(o2, customerB, rA1, Visit.VisitType.CUSTOMER);
+        Visit o2Pickup = new Visit(o2, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB");
+        Visit o2Delivery = new Visit(o2, customerB, Visit.VisitType.CUSTOMER, "ChainB");
 
-        Visit o2_2Pickup = new Visit(o2_2, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o2_2Delivery = new Visit(o2_2, customerB, rA1, Visit.VisitType.CUSTOMER);
+        Visit o2_2Pickup = new Visit(o2_2, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB");
+        Visit o2_2Delivery = new Visit(o2_2, customerB, Visit.VisitType.CUSTOMER, "ChainB");
 
-        Visit o3Pickup = new Visit(o3, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o3Delivery = new Visit(o3, customerC, rA1, Visit.VisitType.CUSTOMER);
+        Visit o3Pickup = new Visit(o3, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB");
+        Visit o3Delivery = new Visit(o3, customerC, Visit.VisitType.CUSTOMER, "ChainB");
 
-        Visit o4Pickup = new Visit(o4, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o4Delivery = new Visit(o4, customerA, rA1, Visit.VisitType.CUSTOMER);
+        Visit o4Pickup = new Visit(o4, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA");
+        Visit o4Delivery = new Visit(o4, customerA, Visit.VisitType.CUSTOMER, "ChainA");
 
-        Visit o5Pickup = new Visit(o5, rA1Loc, rA1, Visit.VisitType.RESTAURANT);
-        Visit o5Delivery = new Visit(o5, customerB, rA1, Visit.VisitType.CUSTOMER);
+        Visit o5Pickup = new Visit(o5, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA");
+        Visit o5Delivery = new Visit(o5, customerB, Visit.VisitType.CUSTOMER, "ChainA");
 
         o1.setRestaurantVisit(o1Pickup);
         o1.setCustomerVisit(o1Delivery);
@@ -169,14 +171,17 @@ public class FoodDeliveryOptimizerApp {
         o5.setRestaurantVisit(o5Pickup);
         o5.setCustomerVisit(o5Delivery);
 
+        // List of all visits including pickup options for solver
         List<Visit> visits = List.of(
-                o1Pickup, o1Delivery,
-                o2Pickup, o2Delivery,
-                o2_2Pickup, o2_2Delivery,
-                o3Pickup, o3Delivery,
-                o4Pickup, o4Delivery,
-                o5Pickup, o5Delivery
+                o1Delivery, new Visit(o1, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o1, rA2Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o1, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o1, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB"),
+                o2Delivery, new Visit(o2, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2, rA2Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB"),
+                o2_2Delivery, new Visit(o2_2, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2_2, rA2Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2_2, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o2_2, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB"),
+                o3Delivery, new Visit(o3, rA1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o3, rA2Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o3, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o3, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB"),
+                o4Delivery, new Visit(o4, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o4, rA2Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o4, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o4, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB"),
+                o5Delivery, new Visit(o5, rA1Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o5, rA2Loc, Visit.VisitType.RESTAURANT, "ChainA"), new Visit(o5, rB1Loc, Visit.VisitType.RESTAURANT, "ChainB"), new Visit(o5, rB2Loc, Visit.VisitType.RESTAURANT, "ChainB")
         );
+
+        c1.setVisits(visits);
 
         // -------- Solution --------
         DeliverySolution problem = new DeliverySolution();

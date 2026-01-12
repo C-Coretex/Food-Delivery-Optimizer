@@ -20,17 +20,10 @@ public class Visit {
     @PlanningId
     private Long id;
 
-    @PlanningVariable(valueRangeProviderRefs = "restaurantList")
-    private Restaurant restaurant; //with allowUnassigned = true it doesn't work... It was better to split visit for Restaurant and Customer initially, now we need to assign dummy restaurant for all Customers
+ //   @PlanningVariable(valueRangeProviderRefs = "restaurantList")
+    //private Restaurant restaurant; //with allowUnassigned = true it doesn't work... It was better to split visit for Restaurant and Customer initially, now we need to assign dummy restaurant for all Customers
 
-    @CascadingUpdateShadowVariable(targetMethodName = "updateData")
     private Location location;
-    public Location getLocation() {
-        if (type == VisitType.RESTAURANT && restaurant != null) {
-            return restaurant.getLocation();
-        }
-        return location;
-    }
 
     private Order order;
     private VisitType type; // RESTAURANT or CUSTOMER
@@ -50,58 +43,46 @@ public class Visit {
         CUSTOMER
     }
 
+    private String chainId;
+
     public Visit() {this.id = ID_GENERATOR.incrementAndGet();}
 
-    public Visit(Order order, Location location, VisitType type) {
+    public Visit(Order order, Location location, VisitType type, String chainId) {
         this.id = ID_GENERATOR.incrementAndGet();
         this.order = order;
         this.location = location;
         this.type = type;
-    }
-    public Visit(Order order, Location location, Restaurant restaurant, VisitType type) {
-        this.id = ID_GENERATOR.incrementAndGet();
-        this.order = order;
-        this.location = location;
-        this.restaurant = restaurant;
-        this.type = type;
+        this.chainId = chainId;
     }
 
     public void updateData() {
-        updateLocation();
         updateDeliveryTime();
     }
     private void updateDeliveryTime() {
-        if (courier == null) {
-            minuteTime = null;
+        if (this.getCourier() == null) {
+            this.setMinuteTime(null);
             return;
         }
 
         int arrivalTime;
-        if (previousVisit == null) {
+        if (this.getPreviousVisit() == null) {
             // The courier starts their shift
-            arrivalTime = order.getEarliestMinute();
+            arrivalTime = this.getOrder().getEarliestMinute();
         } else {
-            Integer prevTime = previousVisit.getMinuteTime();
+            Integer prevTime = this.getPreviousVisit().getMinuteTime();
             if (prevTime == null) {
-                minuteTime = null;
+                this.setMinuteTime(null);
                 return;
             }
-            int travelTime = calculateTravelTime(previousVisit.getLocation(), this.location);
-            int serviceTime = getServiceTime(previousVisit);
+            int travelTime = calculateTravelTime(this.getPreviousVisit().getLocation(), this.getLocation());
+            int serviceTime = getServiceTime(this.getPreviousVisit());
             arrivalTime = prevTime + travelTime + serviceTime;
         }
 
         // IMPORTANT: If we arrive before the order is ready, we MUST wait.
         // This pushes the time forward and ensures constraints are calculated correctly.
         int readyTime = order.getEarliestMinute();
-        this.minuteTime = Math.max(arrivalTime, readyTime);
-    }
-
-    private void updateLocation() {
-        if(type != VisitType.RESTAURANT || restaurant == null)
-            return;
-
-        location = restaurant.getLocation();
+        this.setMinuteTime(Math.max(arrivalTime, readyTime));
     }
 
     private int calculateTravelTime(Location from, Location to) {
