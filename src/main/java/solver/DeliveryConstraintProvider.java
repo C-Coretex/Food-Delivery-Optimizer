@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 public class DeliveryConstraintProvider implements ConstraintProvider {
 
@@ -31,8 +32,10 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 restaurantMustBeAbleToProcessOrder(factory),
                 restaurantMaxParallelCapacity(factory),
 
-                //courier soft
+                //soft
                 minimizeCouriers(factory),
+                minimizeTotalDistance(factory),
+                awardForIsBoostOrder(factory)
         };
     }
 
@@ -43,8 +46,15 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
     private Constraint orderMustBeDeliveredInTimeWindow(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
-                .filter(v -> v.getMinuteTime() < v.getOrder().getEarliestMinute() || v.getMinuteTime() > v.getOrder().getLatestMinute())
-                .penalize(HardSoftScore.ONE_HARD)
+                .join(Order.class,
+                        Joiners.equal(Visit::getOrder, o -> o))
+                .penalize(HardSoftScore.ONE_HARD,
+                        (v, o) -> {
+                            Integer time = v.getMinuteTime();
+                            if (time == null) return 0;
+                            if (time < o.getEarliestMinute() || time > o.getLatestMinute()) return 1;
+                            return 0;
+                        })
                 .asConstraint("Order must be delivered in time");
     }
 
@@ -217,8 +227,8 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Do not use new couriers if possible.
      * Make extra penalty if courier have been added.
      */
-    private static final int EXTRA_COURIER_PENALTY = 20;
-    private static final int COURIER_TIME_PENALTY = 5;
+    private static final int EXTRA_COURIER_PENALTY = 30;
+    private static final int COURIER_TIME_PENALTY = 10;
     private Constraint minimizeCouriers(ConstraintFactory factory) {
         return factory.forEach(CourierShift.class)
                 .filter(CourierShift::isUsed)
@@ -229,6 +239,22 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         }
                 )
                 .asConstraint("Extra couriers are expensive");
+    }
+
+    private Constraint minimizeTotalDistance(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(visit -> visit.getPreviousVisit() != null)
+                .join(Visit.class,
+                        Joiners.equal(Function.identity(), Visit::getPreviousVisit)) // Join current visit with its previous
+                .penalize(HardSoftScore.ONE_SOFT,
+                        (currentVisit, previousVisit) -> {
+                            Location from = previousVisit.getLocation();
+                            Location to = currentVisit.getLocation();
+                            if (from == null || to == null) return 0;
+                            Long seconds = from.timeTo(to);
+                            return seconds != null ? seconds.intValue() : 0;
+                        })
+                .asConstraint("Minimize total travel time");
     }
 
     /**
@@ -247,6 +273,15 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .asConstraint("Courier shift must not be more than 6 hours");
     }
 
+    private static final double isBoostCoefficient = 0.15;
+    private Constraint awardForIsBoostOrder(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
+                .filter(v -> v.getRestaurant() != null && v.getRestaurant().isBoost())
+                .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.floor(v.getOrder().getTotalCost() * isBoostCoefficient)*10)
+                .asConstraint("Reward for IsBoost Restaurant usage");
+    }
+
     /**
      * HARD:
      * Food maximum delivery time must not be exceeded.
@@ -258,9 +293,13 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .join(Visit.class,
                         Joiners.equal(Visit::getOrder),
                         Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
-                .filter((cust, rest) -> cust.getMinuteTime() != null && rest.getMinuteTime() != null)
-                .filter((cust, rest) -> calculateDeliveryTimePenalty(cust, rest) > 0)
-                .penalize(HardSoftScore.ONE_HARD, this::calculateDeliveryTimePenalty)
+                .penalize(HardSoftScore.ONE_HARD,
+                        (cust, rest) -> {
+                            Integer dTime = cust.getMinuteTime();
+                            Integer pTime = rest.getMinuteTime();
+                            if (dTime == null || pTime == null) return 0;
+                            return calculateDeliveryTimePenalty(cust, rest) > 0 ? 1 : 0;
+                        })
                 .asConstraint("Food max delivery time exceeded");
     }
 

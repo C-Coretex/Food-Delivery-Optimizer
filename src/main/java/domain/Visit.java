@@ -23,6 +23,7 @@ public class Visit {
     @PlanningVariable(valueRangeProviderRefs = "restaurantList")
     private Restaurant restaurant; //with allowUnassigned = true it doesn't work... It was better to split visit for Restaurant and Customer initially, now we need to assign dummy restaurant for all Customers
 
+    @CascadingUpdateShadowVariable(targetMethodName = "updateData")
     private Location location;
     public Location getLocation() {
         if (type == VisitType.RESTAURANT && restaurant != null) {
@@ -44,7 +45,6 @@ public class Visit {
 
     @CascadingUpdateShadowVariable(targetMethodName = "updateData")
     private Integer minuteTime;
-
     public enum VisitType {
         RESTAURANT,
         CUSTOMER

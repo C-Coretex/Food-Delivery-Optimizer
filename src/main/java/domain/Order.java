@@ -26,7 +26,7 @@ public class Order {
     private String chainId;
     private int minAllowedTimeToDeliver;
     private int totalCookTime;
-
+    private double totalCost;
     public Order() {}
 
     public Order(String id, int earliestMinute, int latestMinute, List<Food> foods) {
@@ -40,6 +40,9 @@ public class Order {
                 .orElse(Integer.MAX_VALUE);
         totalCookTime = foods.stream()
                 .mapToInt(Food::getPrepTimeMinutes)
+                .sum();
+        totalCost = foods.stream()
+                .mapToDouble(Food::getPrice)
                 .sum();
         chainId = foods.get(0).getChainId();
     }

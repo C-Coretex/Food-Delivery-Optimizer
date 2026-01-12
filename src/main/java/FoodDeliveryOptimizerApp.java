@@ -114,7 +114,7 @@ public class FoodDeliveryOptimizerApp {
         Restaurant rB1 = new Restaurant("RB1", "ChainB", 2, false);
         rB1.setLocation(rB1Loc);
 
-        Restaurant rB2 = new Restaurant("RB2", "ChainB", 1, false);
+        Restaurant rB2 = new Restaurant("RB2", "ChainB", 1, true);
         rB2.setLocation(rB2Loc);
 
         // -------- Courier shifts --------
