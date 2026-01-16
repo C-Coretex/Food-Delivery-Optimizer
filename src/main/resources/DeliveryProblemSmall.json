@@ -54,28 +54,36 @@
       "chainId": "ChainA",
       "parallelCookingCapacity": 4,
       "location": "1",
-      "boost" : false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "RA2",
       "chainId": "ChainA",
       "parallelCookingCapacity": 6,
       "location": "2",
-      "boost" : false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "RB1",
       "chainId": "ChainB",
       "parallelCookingCapacity": 2,
       "location": "3",
-      "boost" : false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "RB2",
       "chainId": "ChainB",
       "parallelCookingCapacity": 1,
       "location": "4",
-      "boost" : true
+      "boost": true,
+      "startMinute" : 480,
+      "endMinute" : 1320
     }
   ],
 

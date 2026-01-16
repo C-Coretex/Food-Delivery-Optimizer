@@ -23,11 +23,13 @@ public class Restaurant {
 
     public Restaurant() {}
 
-    public Restaurant(String id, String chainId, int parallelCookingCapacity, boolean boost) {
+    public Restaurant(String id, String chainId, int parallelCookingCapacity, boolean boost, int startMinute, int endMinute) {
         this.id = id;
         this.chainId = chainId;
         this.parallelCookingCapacity = parallelCookingCapacity;
         this.boost = boost;
+        this.startMinute = startMinute;
+        this.endMinute = endMinute;
     }
 
 }

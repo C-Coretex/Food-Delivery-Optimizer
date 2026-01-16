@@ -24,8 +24,6 @@ public class FoodDeliveryOptimizerApp {
         List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
         problem.setVisitList(visits);
 
-        DeliverySolution problems = getSolution(); //Old manual solutions
-
         startSolution(problem);
 
     }
@@ -119,16 +117,16 @@ public class FoodDeliveryOptimizerApp {
         Location customerC = new Location(102L, 57.01, 24.16);
 
         // -------- Restaurants (multiple per chain) --------
-        Restaurant rA1 = new Restaurant("RA1", "ChainA", 4, false);
+        Restaurant rA1 = new Restaurant("RA1", "ChainA", 4, false,480,1320);
         rA1.setLocation(rA1Loc);
 
-        Restaurant rA2 = new Restaurant("RA2", "ChainA", 6, false);
+        Restaurant rA2 = new Restaurant("RA2", "ChainA", 6, false,480,1320);
         rA2.setLocation(rA2Loc);
 
-        Restaurant rB1 = new Restaurant("RB1", "ChainB", 2, false);
+        Restaurant rB1 = new Restaurant("RB1", "ChainB", 2, false,480,1320);
         rB1.setLocation(rB1Loc);
 
-        Restaurant rB2 = new Restaurant("RB2", "ChainB", 1, true);
+        Restaurant rB2 = new Restaurant("RB2", "ChainB", 1, true,480,1320);
         rB2.setLocation(rB2Loc);
 
         // -------- Courier shifts --------
