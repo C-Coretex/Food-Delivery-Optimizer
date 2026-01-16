@@ -6,6 +6,8 @@ import ai.timefold.solver.core.api.solver.SolverFactory;
 import java.util.*;
 import fdo.domain.*;
 
+import fdo.generator.Generator;
+import fdo.generator.JsonIO;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,8 +18,18 @@ public class FoodDeliveryOptimizerApp {
 
     public static void main(String[] args) {
         // --- Courier shifts ---
-        DeliverySolution problem = getSolution();
+        String path = "src/main/resources/DeliveryProblem30.json";
+        DeliverySolution problem = JsonIO.read_json(path); //New json solution
 
+        List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
+        problem.setVisitList(visits);
+
+        DeliverySolution problems = getSolution(); //Old manual solutions
+
+        startSolution(problem);
+
+    }
+    private static void startSolution(DeliverySolution problem) {
         Router router = Router.getDefaultRouterInstance();
         router.setDistanceTimeMap(problem.getLocationList());
 
@@ -143,7 +155,7 @@ public class FoodDeliveryOptimizerApp {
         Order o5 = new Order("O5", 900, 980, List.of(burger));
         o5.setDeliveryLocation(customerB);
 
-        // -------- Visits (restaurant chosen later by fdo.solver) --------
+        // -------- Visits (restaurant chosen later by solver) --------
         Visit o1Delivery = new Visit(o1, customerA, Visit.VisitType.CUSTOMER);
 
         Visit o2Delivery = new Visit(o2, customerB, Visit.VisitType.CUSTOMER);
@@ -156,7 +168,7 @@ public class FoodDeliveryOptimizerApp {
 
         Visit o5Delivery = new Visit(o5, customerB, Visit.VisitType.CUSTOMER);
 
-        // List of all visits including pickup options for fdo.solver
+        // List of all visits including pickup options for solver
         List<Visit> visits = List.of(
                 o1Delivery, new Visit(o1, rA1Loc, Visit.VisitType.RESTAURANT, rA1), new Visit(o1, rA2Loc, Visit.VisitType.RESTAURANT, rA2), new Visit(o1, rB1Loc, Visit.VisitType.RESTAURANT, rB1), new Visit(o1, rB2Loc, Visit.VisitType.RESTAURANT, rB2),
                 o2Delivery, new Visit(o2, rA1Loc, Visit.VisitType.RESTAURANT, rA1), new Visit(o2, rA2Loc, Visit.VisitType.RESTAURANT, rA2), new Visit(o2, rB1Loc, Visit.VisitType.RESTAURANT, rB1), new Visit(o2, rB2Loc, Visit.VisitType.RESTAURANT, rB2),

@@ -60,6 +60,13 @@ public class Visit {
         this.type = type;
         this.restaurant = restaurant;
     }
+    public void setVisitType(VisitType visitType) {
+        this.type = visitType;
+    }
+
+    public void setCourierShift(CourierShift courierShift) {
+        this.courier = courierShift;
+    }
 
     public void updateData() {
         updateDeliveryTime();
