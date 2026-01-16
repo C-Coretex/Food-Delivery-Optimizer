@@ -71,7 +71,9 @@ public class JsonIO {
                             restNode.get("id").asText(),
                             restNode.get("chainId").asText(),
                             restNode.get("parallelCookingCapacity").asInt(),
-                            restNode.get("boost").asBoolean()
+                            restNode.get("boost").asBoolean(),
+                            restNode.get("startMinute").asInt(),
+                            restNode.get("endMinute").asInt()
                     );
                     restaurant.setLocation(location);
                     restaurants.add(restaurant);

@@ -208,84 +208,108 @@
       "chainId": "PizzaExpress",
       "parallelCookingCapacity": 5,
       "location": "1",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "PE2",
       "chainId": "PizzaExpress",
       "parallelCookingCapacity": 4,
       "location": "3",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "PE3",
       "chainId": "PizzaExpress",
       "parallelCookingCapacity": 6,
       "location": "7",
-      "boost": true
+      "boost": true,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "BK1",
       "chainId": "BurgerKing",
       "parallelCookingCapacity": 8,
       "location": "2",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "BK2",
       "chainId": "BurgerKing",
       "parallelCookingCapacity": 7,
       "location": "5",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "BK3",
       "chainId": "BurgerKing",
       "parallelCookingCapacity": 6,
       "location": "9",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "FB1",
       "chainId": "FreshBar",
       "parallelCookingCapacity": 3,
       "location": "4",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "FB2",
       "chainId": "FreshBar",
       "parallelCookingCapacity": 4,
       "location": "8",
-      "boost": true
+      "boost": true,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "SW1",
       "chainId": "SushiWorld",
       "parallelCookingCapacity": 3,
       "location": "6",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "SW2",
       "chainId": "SushiWorld",
       "parallelCookingCapacity": 2,
       "location": "10",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "AK1",
       "chainId": "AsianKitchen",
       "parallelCookingCapacity": 4,
       "location": "3",
-      "boost": false
+      "boost": false,
+      "startMinute" : 480,
+      "endMinute" : 1320
     },
     {
       "id": "AK2",
       "chainId": "AsianKitchen",
       "parallelCookingCapacity": 5,
       "location": "8",
-      "boost": true
+      "boost": true,
+      "startMinute" : 480,
+      "endMinute" : 1320
     }
   ],
 
