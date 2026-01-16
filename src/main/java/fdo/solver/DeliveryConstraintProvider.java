@@ -258,7 +258,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
                 .filter(v -> v.getRestaurant() != null && v.getRestaurant().getBoost())
-                .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.ceil(v.getOrder().getTotalCost() * isBoostCoefficient)*20)
+                .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.ceil(v.getOrder().getTotalCost() * isBoostCoefficient)*10)
                 .asConstraint("Reward for IsBoost Restaurant usage");
     }
 
