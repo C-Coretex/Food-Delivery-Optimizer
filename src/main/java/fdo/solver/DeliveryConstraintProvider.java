@@ -1,6 +1,6 @@
-package solver;
+package fdo.solver;
 
-import domain.*;
+import fdo.domain.*;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 

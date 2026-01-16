@@ -1,8 +1,6 @@
-package domain;
+package fdo.domain;
 
-import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
-import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,4 +1,4 @@
-package domain;
+package fdo.domain;
 
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;

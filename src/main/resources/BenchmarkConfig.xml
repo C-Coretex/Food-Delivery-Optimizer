@@ -7,9 +7,9 @@
         <solver>
             <environmentMode>PHASE_ASSERT</environmentMode>
             <!-- Define the model -->
-            <solutionClass>domain.DeliverySolution</solutionClass>
-            <entityClass>domain.CourierShift</entityClass>
-            <entityClass>domain.Visit</entityClass>
+            <solutionClass>fdo.domain.DeliverySolution</solutionClass>
+            <entityClass>fdo.domain.CourierShift</entityClass>
+            <entityClass>fdo.domain.Visit</entityClass>
 
             <!-- Define the score function -->
             <scoreDirectorFactory>
@@ -24,7 +24,7 @@
             <constructionHeuristic />
         </solver>
         <problemBenchmarks>
-            <solutionFileIOClass>domain.JsonIO</solutionFileIOClass>
+            <solutionFileIOClass>fdo.domain.JsonIO</solutionFileIOClass>
             <writeOutputSolutionEnabled>true</writeOutputSolutionEnabled>
             <inputSolutionFile>data/problem_10.json</inputSolutionFile>
             <inputSolutionFile>data/problem_25.json</inputSolutionFile>

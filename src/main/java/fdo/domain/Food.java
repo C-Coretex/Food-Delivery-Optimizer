@@ -1,4 +1,4 @@
-package domain;
+package fdo.domain;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import lombok.Getter;

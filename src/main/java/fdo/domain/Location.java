@@ -1,4 +1,4 @@
-package domain;
+package fdo.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.graphhopper.util.shapes.GHPoint;

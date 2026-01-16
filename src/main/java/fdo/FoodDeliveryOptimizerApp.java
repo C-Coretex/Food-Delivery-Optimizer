@@ -1,9 +1,10 @@
+package fdo;
+
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import java.util.*;
-import domain.*;
-import domain.Food.Temperature;
+import fdo.domain.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -142,7 +143,7 @@ public class FoodDeliveryOptimizerApp {
         Order o5 = new Order("O5", 900, 980, List.of(burger));
         o5.setDeliveryLocation(customerB);
 
-        // -------- Visits (restaurant chosen later by solver) --------
+        // -------- Visits (restaurant chosen later by fdo.solver) --------
         Visit o1Delivery = new Visit(o1, customerA, Visit.VisitType.CUSTOMER);
 
         Visit o2Delivery = new Visit(o2, customerB, Visit.VisitType.CUSTOMER);
@@ -155,7 +156,7 @@ public class FoodDeliveryOptimizerApp {
 
         Visit o5Delivery = new Visit(o5, customerB, Visit.VisitType.CUSTOMER);
 
-        // List of all visits including pickup options for solver
+        // List of all visits including pickup options for fdo.solver
         List<Visit> visits = List.of(
                 o1Delivery, new Visit(o1, rA1Loc, Visit.VisitType.RESTAURANT, rA1), new Visit(o1, rA2Loc, Visit.VisitType.RESTAURANT, rA2), new Visit(o1, rB1Loc, Visit.VisitType.RESTAURANT, rB1), new Visit(o1, rB2Loc, Visit.VisitType.RESTAURANT, rB2),
                 o2Delivery, new Visit(o2, rA1Loc, Visit.VisitType.RESTAURANT, rA1), new Visit(o2, rA2Loc, Visit.VisitType.RESTAURANT, rA2), new Visit(o2, rB1Loc, Visit.VisitType.RESTAURANT, rB1), new Visit(o2, rB2Loc, Visit.VisitType.RESTAURANT, rB2),

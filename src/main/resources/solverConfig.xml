@@ -9,14 +9,14 @@
     <environmentMode>NO_ASSERT</environmentMode>
 
     <!-- MODEL -->
-    <solutionClass>domain.DeliverySolution</solutionClass>
-    <entityClass>domain.CourierShift</entityClass>
-    <entityClass>domain.Visit</entityClass>
+    <solutionClass>fdo.domain.DeliverySolution</solutionClass>
+    <entityClass>fdo.domain.CourierShift</entityClass>
+    <entityClass>fdo.domain.Visit</entityClass>
 
     <!-- SCORING -->
     <scoreDirectorFactory>
         <constraintProviderClass>
-            solver.DeliveryConstraintProvider
+            fdo.solver.DeliveryConstraintProvider
         </constraintProviderClass>
     </scoreDirectorFactory>
 
