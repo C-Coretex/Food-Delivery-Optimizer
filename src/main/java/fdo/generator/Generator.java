@@ -7,6 +7,7 @@ import fdo.domain.Visit;
 import fdo.domain.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Generator {
     public final class VisitGenerator {
@@ -28,7 +29,7 @@ public class Generator {
                 visits.add(delivery);
 
 
-                for (Restaurant restaurant : solution.getRestaurantList()) {
+                for (Restaurant restaurant : solution.getRestaurantList().stream().filter(r -> Objects.equals(order.getChainId(), r.getChainId())).toList()) {
                     Visit pickup = new Visit();
                     //pickup.setId("PICKUP-" + order.getId() + "-" + restaurant.getId());
                     pickup.setVisitType(Visit.VisitType.RESTAURANT);

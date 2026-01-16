@@ -18,13 +18,11 @@ public class FoodDeliveryOptimizerApp {
 
     public static void main(String[] args) {
         // --- Courier shifts ---
-        String path = "src/main/resources/DeliveryProblemSmall.json";
+        String path = "src/main/resources/DeliveryProblem30.json";
         DeliverySolution problem = JsonIO.read_json(path); //New json solution
 
         List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
         problem.setVisitList(visits);
-
-        DeliverySolution problems = getSolution(); //Old manual solutions
 
         startSolution(problem);
 

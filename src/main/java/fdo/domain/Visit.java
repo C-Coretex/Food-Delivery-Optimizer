@@ -37,6 +37,10 @@ public class Visit {
 
     @CascadingUpdateShadowVariable(targetMethodName = "updateData")
     private Integer minuteTime;
+
+    @CascadingUpdateShadowVariable(targetMethodName = "updateData")
+    private Integer roadTime;
+
     public enum VisitType {
         RESTAURANT,
         CUSTOMER
@@ -69,7 +73,9 @@ public class Visit {
     }
 
     public void updateData() {
+
         updateDeliveryTime();
+        updateRoadTime();
     }
     private void updateDeliveryTime() {
         if (this.getCourier() == null) {
@@ -96,6 +102,21 @@ public class Visit {
         // This pushes the time forward and ensures constraints are calculated correctly.
         int readyTime = order.getEarliestMinute();
         this.setMinuteTime(Math.max(arrivalTime, readyTime));
+    }
+
+    private void updateRoadTime() {
+        if(previousVisit == null) {
+            this.setRoadTime(0);
+            return;
+        }
+        Location from = previousVisit.getLocation();
+        Location to = getLocation();
+        if (from == null || to == null) {
+            this.setRoadTime(0);
+            return;
+        }
+        Long seconds = from.timeTo(to);
+        this.setRoadTime(seconds != null ? seconds.intValue() / 60 : 0);
     }
 
     private int calculateTravelTime(Location from, Location to) {

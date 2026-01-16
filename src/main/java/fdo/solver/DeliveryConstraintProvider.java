@@ -28,7 +28,6 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 deliveryRequiresPickup(factory),
 
                 //restaurant hard
-                pickupRestaurantMustMatchFoodChain(factory),
                 restaurantMustBeAbleToProcessOrder(factory),
                 restaurantMaxParallelCapacity(factory),
 
@@ -89,25 +88,11 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * HARD:
      * Pickup visit must use a restaurant from the same chain as the ordered food.
      */
-    private Constraint pickupRestaurantMustMatchFoodChain(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
-                .filter(v ->
-                        v.getOrder().getFoods().stream()
-                                .anyMatch(f -> !f.getChainId().equals(v.getRestaurant().getChainId()))
-                )
-                .penalize(HardSoftScore.ofHard(10))
-                .asConstraint("Pickup restaurant must match food chain");
-    }
-
-    /**
-     * HARD:
-     * Pickup visit must use a restaurant from the same chain as the ordered food.
-     */
     private Constraint restaurantMustBeAbleToProcessOrder(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
-                .filter(v -> !Objects.equals(v.getRestaurant().getChainId(), v.getOrder().getChainId()))
+                .filter(v -> !Objects.equals(v.getRestaurant().getChainId(), v.getOrder().getChainId())
+                    || v.getRestaurant().getStartMinute() > v.getMinuteTime() || v.getRestaurant().getEndMinute() < v.getMinuteTime())
                 .penalize(HardSoftScore.ofHard(10))
                 .asConstraint("Order must be processed in correct restaurant chain");
     }
@@ -238,7 +223,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter(CourierShift::isUsed)
                 .penalize(HardSoftScore.ONE_SOFT,
                         c -> {
-                            var endTime = (int)Math.ceil((float)Math.max(c.getEndMinute() - c.getStartMinute(), 180)/60);
+                            var endTime = (int)Math.ceil((float)Math.max(c.getDurationMinutes(), 180)/60);
                             return EXTRA_COURIER_PENALTY + endTime * COURIER_TIME_PENALTY;
                         }
                 )
@@ -247,17 +232,8 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
 
     private Constraint minimizeTotalDistance(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
-                .filter(visit -> visit.getPreviousVisit() != null)
-                .join(Visit.class,
-                        Joiners.equal(Function.identity(), Visit::getPreviousVisit)) // Join current visit with its previous
-                .penalize(HardSoftScore.ONE_SOFT,
-                        (currentVisit, previousVisit) -> {
-                            Location from = previousVisit.getLocation();
-                            Location to = currentVisit.getLocation();
-                            if (from == null || to == null) return 0;
-                            Long seconds = from.timeTo(to);
-                            return seconds != null ? seconds.intValue() / 60 : 0;
-                        })
+                .filter(visit -> visit.getRoadTime() != null && visit.getRoadTime() != 0)
+                .penalize(HardSoftScore.ONE_SOFT, Visit::getRoadTime)
                 .asConstraint("Minimize total travel time");
     }
 
