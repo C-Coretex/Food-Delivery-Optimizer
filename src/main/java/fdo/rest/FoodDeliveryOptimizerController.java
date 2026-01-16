@@ -6,8 +6,12 @@ import ai.timefold.solver.core.api.score.constraint.Indictment;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.SolverManager;
 import ai.timefold.solver.core.api.solver.SolverStatus;
+import com.fasterxml.jackson.databind.JsonNode;
 import fdo.domain.DeliverySolution;
 import fdo.domain.Router;
+import fdo.domain.Visit;
+import fdo.generator.Generator;
+import fdo.generator.JsonIO;
 import fdo.solver.SimpleIndictmentObject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -75,6 +79,36 @@ public class FoodDeliveryOptimizerController {
                     log.error("Failed solving jobId ({}).", jobId, exception);
                 })
                 .run();
+        return jobId;
+    }
+
+    @PostMapping(
+            value = "/solve-custom",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.TEXT_PLAIN_VALUE
+    )
+    public String solveCustom(@RequestBody JsonNode root) {
+        DeliverySolution problem = JsonIO.parse_json(root);
+
+        ghRouter.setDistanceTimeMap(problem.getLocationList());
+
+        List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
+        problem.setVisitList(visits);
+
+        String jobId = UUID.randomUUID().toString();
+        jobIdToJob.put(jobId, Job.ofDeliverySolution(problem));
+
+        solverManager.solveBuilder()
+                .withProblemId(jobId)
+                .withProblemFinder(jobId_ -> jobIdToJob.get(jobId_).deliverySolution)
+                .withBestSolutionConsumer(solution ->
+                        jobIdToJob.put(jobId, Job.ofDeliverySolution(solution)))
+                .withExceptionHandler((jobId_, exception) -> {
+                    jobIdToJob.put(jobId_, Job.ofException(exception));
+                    log.error("Failed solving jobId ({}).", jobId_, exception);
+                })
+                .run();
+
         return jobId;
     }
 

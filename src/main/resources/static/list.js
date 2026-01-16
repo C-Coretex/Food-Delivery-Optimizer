@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $.getJSON("/evrp", function(routes) {
+    $.getJSON("/fdo", function(routes) {
         var listofroutes = $("#listofroutes");
         $.each(routes, function(idx, value) {
               listofroutes.append(
