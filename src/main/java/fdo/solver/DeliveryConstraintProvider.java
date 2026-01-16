@@ -80,7 +80,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT && v2.getCourier() != null)
                 // If one is assigned and the other isn't, OR they are assigned to different couriers
                 .filter((cust, rest) -> !Objects.equals(cust.getCourier(), rest.getCourier()))
-                .penalize(HardSoftScore.ofHard(10)) // Make this VERY high
+                .penalize(HardSoftScore.ofHard(1))
                 .asConstraint("Order visits must be on same courier");
     }
 
@@ -92,7 +92,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
                 .filter(v -> !Objects.equals(v.getRestaurant().getChainId(), v.getOrder().getChainId())
-                    || v.getRestaurant().getStartMinute() > v.getMinuteTime() || v.getRestaurant().getEndMinute() < v.getMinuteTime())
+                        || v.getRestaurant().getStartMinute() > v.getMinuteTime() || v.getRestaurant().getEndMinute() < v.getMinuteTime())
                 .penalize(HardSoftScore.ofHard(10))
                 .asConstraint("Order must be processed in correct restaurant chain");
     }
@@ -100,7 +100,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
     /**
      * HARD:
      * Pickup visit must use a restaurant from the same chain as the ordered food.
-    */
+     */
     private Constraint restaurantMaxParallelCapacity(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getMinuteTime() != null)
@@ -124,7 +124,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .groupBy((v1, v2) -> v1, ConstraintCollectors.countBi())
                 // Penalize if the number of simultaneous orders (count + 1 for self) > maxParallel
                 .filter((v1, overlapCount) -> (overlapCount + 1) > v1.getRestaurant().getParallelCookingCapacity())
-                .penalize(HardSoftScore.ONE_HARD, (v1, overlapCount) -> (overlapCount + 1) - v1.getRestaurant().getParallelCookingCapacity())
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Restaurant max parallel capacity exceeded");
     }
 
@@ -187,7 +187,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         Joiners.filtering((cust, rest) ->
                                 rest.getType() == Visit.VisitType.RESTAURANT &&
                                         rest.getCourier() != null)) // No assigned restaurant pickup found
-                .penalize(HardSoftScore.ofHard(10))
+                .penalize(HardSoftScore.ofHard(1))
                 .asConstraint("Delivery requires pickup");
     }
 
@@ -208,7 +208,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                     // Violation if Pickup Time >= Delivery Time
                     return rest.getMinuteTime() >= cust.getMinuteTime();
                 })
-                .penalize(HardSoftScore.ofHard(10))
+                .penalize(HardSoftScore.ofHard(1))
                 .asConstraint("Pickup must occur before delivery");
     }
     /**
@@ -216,8 +216,8 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Do not use new couriers if possible.
      * Make extra penalty if courier have been added.
      */
-    private static final int EXTRA_COURIER_PENALTY = 30;
-    private static final int COURIER_TIME_PENALTY = 10;
+    private static final int EXTRA_COURIER_PENALTY = 35;
+    private static final int COURIER_TIME_PENALTY = 15;
     private Constraint minimizeCouriers(ConstraintFactory factory) {
         return factory.forEach(CourierShift.class)
                 .filter(CourierShift::isUsed)
@@ -233,7 +233,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
     private Constraint minimizeTotalDistance(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
                 .filter(visit -> visit.getRoadTime() != null && visit.getRoadTime() != 0)
-                .penalize(HardSoftScore.ONE_SOFT, Visit::getRoadTime)
+                .penalize(HardSoftScore.ONE_SOFT, v -> v.getRoadTime() * 3)
                 .asConstraint("Minimize total travel time");
     }
 
@@ -258,7 +258,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return factory.forEach(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT)
                 .filter(v -> v.getRestaurant() != null && v.getRestaurant().getBoost())
-                .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.floor(v.getOrder().getTotalCost() * isBoostCoefficient)*100)
+                .reward(HardSoftScore.ONE_SOFT, v -> (int)Math.ceil(v.getOrder().getTotalCost() * isBoostCoefficient)*20)
                 .asConstraint("Reward for IsBoost Restaurant usage");
     }
 

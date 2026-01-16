@@ -24,6 +24,20 @@ public class FoodDeliveryOptimizerApp {
         List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
         problem.setVisitList(visits);
 
+        //assign random visits to couriers
+        List<CourierShift> couriers = problem.getCourierShifts();
+
+        couriers.forEach(c -> c.setVisits(new ArrayList<>()));
+
+        List<Visit> shuffled = new ArrayList<>(visits);
+        Collections.shuffle(shuffled, new Random());
+
+        // round-robin assign
+        for (int i = 0; i < shuffled.size(); i++) {
+            CourierShift courier = couriers.get(i % couriers.size());
+            courier.getVisits().add(shuffled.get(i));
+        }
+
         startSolution(problem);
 
     }
@@ -45,8 +59,9 @@ public class FoodDeliveryOptimizerApp {
         log.info("");
         log.info("Final score: {}", solution.getScore());
 
-        var t = solution.getVisitList();
         solution.getCourierShifts().forEach(shift -> {
+            if(shift.getVisits().isEmpty())
+                return;
             String startStr = shift.getStartMinute() != null
                     ? String.format("%02d:%02d", shift.getStartMinute() / 60, shift.getStartMinute() % 60)
                     : "UNASSIGNED";
