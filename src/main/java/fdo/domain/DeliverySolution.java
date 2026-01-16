@@ -3,6 +3,7 @@ package fdo.domain;
 import ai.timefold.solver.core.api.domain.solution.*;
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
+import ai.timefold.solver.core.api.solver.SolverStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 @Getter
 @Setter
 public class DeliverySolution {
+
+    SolverStatus solverStatus;
 
     @PlanningEntityCollectionProperty
     private List<CourierShift> courierShifts;
