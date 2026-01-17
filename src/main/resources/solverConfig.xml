@@ -32,11 +32,10 @@
             <secondsSpentLimit>20</secondsSpentLimit>
         </termination>
         <unionMoveSelector>
-            <subListChangeMoveSelector />
             <listChangeMoveSelector />
             <listSwapMoveSelector />
             <subListChangeMoveSelector>
-                <maximumSubListSize>6</maximumSubListSize>
+                <maximumSubListSize>10</maximumSubListSize>
             </subListChangeMoveSelector>
         </unionMoveSelector>
         <acceptor>
@@ -49,15 +48,14 @@
 
     <localSearch>
         <unionMoveSelector>
-            <subListChangeMoveSelector />
             <listChangeMoveSelector />
             <listSwapMoveSelector />
             <subListChangeMoveSelector>
-                <maximumSubListSize>6</maximumSubListSize>
+                <maximumSubListSize>10</maximumSubListSize>
             </subListChangeMoveSelector>
         </unionMoveSelector>
         <acceptor>
-            <simulatedAnnealingStartingTemperature>4hard/300soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>4hard/500soft</simulatedAnnealingStartingTemperature>
         </acceptor>
         <forager>
             <acceptedCountLimit>100</acceptedCountLimit>

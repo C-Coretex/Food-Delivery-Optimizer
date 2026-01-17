@@ -26,6 +26,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 pickupBeforeDelivery(factory),
                 sameOrderSameCourier(factory),
                 deliveryRequiresPickup(factory),
+                onlyOnePickup(factory),
 
                 //restaurant hard
                 restaurantMustBeAbleToProcessOrder(factory),
@@ -189,6 +190,15 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                                         rest.getCourier() != null)) // No assigned restaurant pickup found
                 .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Delivery requires pickup");
+    }
+
+    private Constraint onlyOnePickup(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
+                .groupBy(Visit::getOrder, ConstraintCollectors.count())
+                .filter((order, count) -> count > 1)
+                .penalize(HardSoftScore.ofSoft(100), (o, c) -> o.getTotalCookTime() * (c - 1)) // penalize each extra pickup
+                .asConstraint("There can be only one pickup per order");
     }
 
     /**
