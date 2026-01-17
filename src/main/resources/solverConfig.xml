@@ -28,9 +28,40 @@
     <constructionHeuristic />
 
     <localSearch>
+        <termination>
+            <secondsSpentLimit>20</secondsSpentLimit>
+        </termination>
+        <unionMoveSelector>
+            <subListChangeMoveSelector />
+            <listChangeMoveSelector />
+            <listSwapMoveSelector />
+            <subListChangeMoveSelector>
+                <maximumSubListSize>6</maximumSubListSize>
+            </subListChangeMoveSelector>
+        </unionMoveSelector>
         <acceptor>
-            <lateAcceptanceSize>200</lateAcceptanceSize>
+            <lateAcceptanceSize>400</lateAcceptanceSize>
         </acceptor>
+        <forager>
+            <acceptedCountLimit>100</acceptedCountLimit>
+        </forager>
+    </localSearch>
+
+    <localSearch>
+        <unionMoveSelector>
+            <subListChangeMoveSelector />
+            <listChangeMoveSelector />
+            <listSwapMoveSelector />
+            <subListChangeMoveSelector>
+                <maximumSubListSize>6</maximumSubListSize>
+            </subListChangeMoveSelector>
+        </unionMoveSelector>
+        <acceptor>
+            <simulatedAnnealingStartingTemperature>4hard/300soft</simulatedAnnealingStartingTemperature>
+        </acceptor>
+        <forager>
+            <acceptedCountLimit>100</acceptedCountLimit>
+        </forager>
     </localSearch>
 
 

@@ -65,7 +65,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
         return factory.forEachIncludingUnassigned(Visit.class)
                 .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
                 .filter(v -> v.getCourier() == null)
-                .penalize(HardSoftScore.ofHard(5))
+                .penalize(HardSoftScore.ofHard(20))
                 .asConstraint("Order must be delivered");
     }
 
@@ -80,7 +80,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT && v2.getCourier() != null)
                 // If one is assigned and the other isn't, OR they are assigned to different couriers
                 .filter((cust, rest) -> !Objects.equals(cust.getCourier(), rest.getCourier()))
-                .penalize(HardSoftScore.ofHard(1))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Order visits must be on same courier");
     }
 
@@ -187,7 +187,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         Joiners.filtering((cust, rest) ->
                                 rest.getType() == Visit.VisitType.RESTAURANT &&
                                         rest.getCourier() != null)) // No assigned restaurant pickup found
-                .penalize(HardSoftScore.ofHard(1))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Delivery requires pickup");
     }
 
@@ -208,7 +208,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                     // Violation if Pickup Time >= Delivery Time
                     return rest.getMinuteTime() >= cust.getMinuteTime();
                 })
-                .penalize(HardSoftScore.ofHard(1))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Pickup must occur before delivery");
     }
     /**
@@ -216,8 +216,8 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Do not use new couriers if possible.
      * Make extra penalty if courier have been added.
      */
-    private static final int EXTRA_COURIER_PENALTY = 35;
-    private static final int COURIER_TIME_PENALTY = 15;
+    private static final int EXTRA_COURIER_PENALTY = 100;
+    private static final int COURIER_TIME_PENALTY = 25;
     private Constraint minimizeCouriers(ConstraintFactory factory) {
         return factory.forEach(CourierShift.class)
                 .filter(CourierShift::isUsed)

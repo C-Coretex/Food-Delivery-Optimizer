@@ -1,5 +1,7 @@
 package fdo;
 
+import ai.timefold.solver.benchmark.api.PlannerBenchmark;
+import ai.timefold.solver.benchmark.api.PlannerBenchmarkFactory;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
@@ -17,6 +19,10 @@ import java.util.List;
 public class FoodDeliveryOptimizerApp {
 
     public static void main(String[] args) {
+        runSolver();
+        //runBenchmark();
+    }
+    private static void runSolver() {
         // --- Courier shifts ---
         String path = "src/main/resources/DeliveryProblem30.json";
         DeliverySolution problem = JsonIO.read_json(path); //New json solution
@@ -25,22 +31,30 @@ public class FoodDeliveryOptimizerApp {
         problem.setVisitList(visits);
 
         //assign random visits to couriers
-        List<CourierShift> couriers = problem.getCourierShifts();
+        //var courier = problem.getCourierShifts().get(0);
 
-        couriers.forEach(c -> c.setVisits(new ArrayList<>()));
-
-        List<Visit> shuffled = new ArrayList<>(visits);
-        Collections.shuffle(shuffled, new Random());
-
-        // round-robin assign
-        for (int i = 0; i < shuffled.size(); i++) {
-            CourierShift courier = couriers.get(i % couriers.size());
-            courier.getVisits().add(shuffled.get(i));
-        }
+        //courier.setVisits(visits);
 
         startSolution(problem);
-
     }
+    private static void runBenchmark() {
+        PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromXmlResource(
+                "benchmarkConfig.xml");
+
+        //String path = "src/main/resources/DeliveryProblemSmall.json";
+        //DeliverySolution problem = JsonIO.read_json(path);
+        //List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
+        //problem.setVisitList(visits);
+
+        String path2 = "src/main/resources/DeliveryProblem30.json";
+        DeliverySolution problem2 = JsonIO.read_json(path2);
+        List<Visit> visits2 = Generator.VisitGenerator.generateAll(problem2);
+        problem2.setVisitList(visits2);
+
+        PlannerBenchmark benchmark = benchmarkFactory.buildPlannerBenchmark(problem2);
+        benchmark.benchmarkAndShowReportInBrowser();
+    }
+
     private static void startSolution(DeliverySolution problem) {
         Router router = Router.getDefaultRouterInstance();
         router.setDistanceTimeMap(problem.getLocationList());
