@@ -72,6 +72,10 @@ public class Visit {
         this.courier = courierShift;
     }
 
+    public VisitType getVisitType() {
+        return this.type;
+    }
+
     public void updateData() {
 
         updateDeliveryTime();

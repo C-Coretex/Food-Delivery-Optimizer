@@ -19,7 +19,8 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
 
                 //courier hard
                 courierShiftDurationBetween3And6Hours(factory),
-
+                courierShiftDurationBelow6Hours(factory),
+                courierShiftMustNotExceed6Hours(factory),
                 //courier-order hard
                 hotCapacityExceeded(factory),
                 coldCapacityExceeded(factory),
@@ -226,7 +227,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Do not use new couriers if possible.
      * Make extra penalty if courier have been added.
      */
-    private static final int EXTRA_COURIER_PENALTY = 100;
+    private static final int EXTRA_COURIER_PENALTY = 3000;
     private static final int COURIER_TIME_PENALTY = 25;
     private Constraint minimizeCouriers(ConstraintFactory factory) {
         return factory.forEach(CourierShift.class)
@@ -292,6 +293,54 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         })
                 .asConstraint("Food max delivery time exceeded");
     }
+    /**
+     * HARD:
+     * Courier shift can not be longer then 6 hours.
+     */
+    private Constraint courierShiftDurationBelow6Hours(ConstraintFactory factory) {
+        return factory.forEach(CourierShift.class)
+                .filter(CourierShift::isUsed)
+                .filter(shift -> {
+                    int d = shift.getDurationMinutes();
+                    return d > 360;
+                })
+                .penalize(HardSoftScore.ONE_HARD, shift -> (shift.getDurationMinutes()/360) * 5)
+                .asConstraint("Courier shift can not be more than 6 hours");
+    }
+
+    /**
+     * HARD:
+     * Courier shift can not be longer then 6 hours.
+     */
+    private Constraint courierShiftMustNotExceed6Hours(ConstraintFactory factory) {
+        return factory.forEach(CourierShift.class)
+                .filter(CourierShift::isUsed)
+                .filter(shift -> shift.getDurationMinutes() > 360)
+                .penalize(HardSoftScore.ofHard(1000))
+                .asConstraint("Courier shift > 6 hours is forbidden");
+    }
+
+    /**
+     * SOFT:
+     * Allows wait for visit
+     */
+    private Constraint waitingBetweenVisits(ConstraintFactory factory) {
+        return factory.forEach(Visit.class)
+                .join(Visit.class,
+                        Joiners.equal(Visit::getCourier),
+                        Joiners.lessThan(Visit::getMinuteTime))
+                .filter((v1, v2) ->
+                        v1.getMinuteTime() != null &&
+                                v2.getMinuteTime() != null &&
+                                v2.getMinuteTime() - v1.getMinuteTime() > 0
+                )
+                .penalize(
+                        HardSoftScore.ONE_SOFT,
+                        (v1, v2) -> v2.getMinuteTime() - v1.getMinuteTime()
+                )
+                .asConstraint("Waiting between visits");
+    }
+
 
     // private method that calculates the penalty
     private int calculateDeliveryTimePenalty(Visit cust, Visit rest) {

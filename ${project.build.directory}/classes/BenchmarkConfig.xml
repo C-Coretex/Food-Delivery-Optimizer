@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plannerBenchmark xmlns="https://timefold.ai/xsd/benchmark" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://timefold.ai/xsd/benchmark https://timefold.ai/xsd/benchmark/benchmark.xsd">
+    <benchmarkDirectory>local/benchmarkReport</benchmarkDirectory>
+
+    <inheritedSolverBenchmark>
+        <solver>
+            <environmentMode>NO_ASSERT</environmentMode>
+            <solutionClass>fdo.domain.DeliverySolution</solutionClass>
+            <entityClass>fdo.domain.CourierShift</entityClass>
+            <entityClass>fdo.domain.Visit</entityClass>
+
+            <scoreDirectorFactory>
+                <constraintProviderClass>
+                    fdo.solver.DeliveryConstraintProvider
+                </constraintProviderClass>
+            </scoreDirectorFactory>
+
+            <!-- Solver-level termination -->
+            <termination>
+                <diminishedReturns />
+            </termination>
+
+            <!-- Phase 1 -->
+            <constructionHeuristic />
+        </solver>
+
+        <problemBenchmarks>
+            <solutionFileIOClass>fdo.domain.JsonIO</solutionFileIOClass>
+            <writeOutputSolutionEnabled>false</writeOutputSolutionEnabled>
+            <problemStatisticType>STEP_SCORE</problemStatisticType>
+            <problemStatisticType>BEST_SCORE</problemStatisticType>
+            <singleStatisticType>PICKED_MOVE_TYPE_BEST_SCORE_DIFF</singleStatisticType>
+            <singleStatisticType>CONSTRAINT_MATCH_TOTAL_BEST_SCORE</singleStatisticType>
+            <singleStatisticType>CONSTRAINT_MATCH_TOTAL_STEP_SCORE</singleStatisticType>
+        </problemBenchmarks>
+
+        <subSingleCount>3</subSingleCount>
+    </inheritedSolverBenchmark>
+
+    <solverBenchmark>
+        <name>Tabu 5 500</name>
+        <solver>
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <valueTabuSize>5</valueTabuSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>1000</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>LAHC 400</name>
+        <solver>
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>100</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>LAHC 400 - with kOpt</name>
+        <solver>
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <kOptListMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>100</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>Simulated Annealing 1</name>
+        <solver>
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <simulatedAnnealingStartingTemperature>5hard/500soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>Simulated Annealing - soft</name>
+        <solver>
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <simulatedAnnealingStartingTemperature>2hard/500soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>100</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+
+    <solverBenchmark>
+        <name>Simulated Annealing in the end</name>
+        <solver>
+            <localSearch>
+                <termination>
+                    <secondsSpentLimit>20</secondsSpentLimit>
+                </termination>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <lateAcceptanceSize>400</lateAcceptanceSize>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>100</acceptedCountLimit>
+                </forager>
+            </localSearch>
+
+            <localSearch>
+                <unionMoveSelector>
+                    <subListChangeMoveSelector />
+                    <listChangeMoveSelector />
+                    <listSwapMoveSelector />
+                    <subListChangeMoveSelector>
+                        <maximumSubListSize>6</maximumSubListSize>
+                    </subListChangeMoveSelector>
+                </unionMoveSelector>
+                <acceptor>
+                    <simulatedAnnealingStartingTemperature>4hard/300soft</simulatedAnnealingStartingTemperature>
+                </acceptor>
+                <forager>
+                    <acceptedCountLimit>100</acceptedCountLimit>
+                </forager>
+            </localSearch>
+        </solver>
+    </solverBenchmark>
+</plannerBenchmark>
