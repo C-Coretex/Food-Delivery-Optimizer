@@ -1,176 +1,199 @@
-var map = L.map('map').setView([56.9337, 24.1258], 11);
-var color_idx = 0;
-const colors = ["#f44336","#e81e63","#9c27b0","#673ab7","#3f51b5","#2196f3","#03a9f4","#00bcd4","#009688",
-                                                "#4caf50","#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722"];
-                       ;
-const defaultIcon = new L.Icon.Default();
-const vehicleIcon = L.divIcon({
-    html: '<i class="fas fa-truck"></i>'
-});
-const chargingIcon = L.divIcon({
-    html: '<i class="fas fa-battery-full"></i>'
-});
-const customerIcon = L.divIcon({
-    html: '<i class="fas fa-warehouse"></i>'
-});
-const vehicleIcon_red = L.divIcon({
-    html: '<i class="fas fa-truck" style="color: #ff0000"></i>'
-});
-const chargingIcon_red = L.divIcon({
-    html: '<i class="fas fa-battery-full" style="color: #ff0000"></i>'
-});
-const customerIcon_red = L.divIcon({
-    html: '<i class="fas fa-warehouse" style="color: #ff0000"></i>'
-});
+const map = L.map("map").setView([56.9337, 24.1258], 11);
 
-$(document).ready(function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    const solutionId = urlParams.get('id');
+const colors = [
+  "#f44336",
+  "#e81e63",
+  "#9c27b0",
+  "#673ab7",
+  "#3f51b5",
+  "#2196f3",
+  "#03a9f4",
+  "#00bcd4",
+  "#009688",
+  "#4caf50",
+  "#8bc34a",
+  "#cddc39",
+  "#ffeb3b",
+  "#ffc107",
+  "#ff9800",
+  "#ff5722",
+];
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+let colorIdx = 0;
 
-    $.getJSON("/evrp/score/" + solutionId, function(analysis) {
-                    var badge = "badge bg-danger";
-                    if (getHardScore(analysis.score)==0) { badge = "badge bg-success"; }
-                    $("#score_a").attr({"title":"Score Brakedown","data-bs-content":"" + getScorePopoverContent(analysis.constraints) + "","data-bs-html":"true"});
-                    $("#score_text").text(analysis.score);
-                    $("#score_text").attr({"class":badge});
+const createFaDivIcon = (faClass, color) =>
+  L.divIcon({
+    html: `<i class="${faClass}"${color ? ` style="color: ${color}"` : ""}></i>`,
+  });
 
-                    $(function () {
-                       $('[data-toggle="popover"]').popover()
-                    })
+const ICON_RED = "#ff0000";
+
+const icons = {
+  restaurant: createFaDivIcon("fas fa-utensils"),
+  restaurantRed: createFaDivIcon("fas fa-utensils", ICON_RED),
+  customer: createFaDivIcon("fas fa-warehouse"),
+  customerRed: createFaDivIcon("fas fa-warehouse", ICON_RED),
+};
+
+$(document).ready(() => {
+  const solutionId = new URLSearchParams(window.location.search).get("id");
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution:
+      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+
+  if (!solutionId) return;
+
+  $.getJSON(`/fdo/score/${solutionId}`, (analysis) => renderScore(analysis));
+  $.getJSON(`/fdo/${solutionId}`, (solution) => {
+    $.getJSON(`/fdo/indictments/${solutionId}`, (indictments) => {
+      renderRoutes(solution, indictments);
+      initPopovers();
     });
-
-    $.getJSON("/evrp/" + solutionId, function(solution) {
-            $.getJSON("/evrp/indictments/" + solutionId, function(indictments) {
-                            renderRoutes(solution, indictments);
-                            $(function () {
-                              $('[data-toggle="popover"]').popover()
-                            })
-            })
-        });
+  });
 });
+
+function initPopovers() {
+  $('[data-toggle="popover"]').popover();
+}
+
+function renderScore(analysis) {
+  const badgeClass =
+    getHardScore(analysis.score) == 0 ? "badge bg-success" : "badge bg-danger";
+
+  $("#score_a").attr({
+    title: "Score Brakedown",
+    "data-bs-content": String(getScorePopoverContent(analysis.constraints)),
+    "data-bs-html": "true",
+  });
+
+  $("#score_text").text(analysis.score).attr({ class: badgeClass });
+
+  initPopovers();
+}
 
 function renderRoutes(solution, indictments) {
-    $("#solutionTitle").text("Version 24/Nov/2025" + solution.name + "  " + solution.solverStatus);
+  $("#solutionTitle").text(
+    `Version 18/Jan/2026${solution.name ?? ""}  ${solution.solverStatus}`,
+  );
 
-    var indictmentMap = {};
-    indictments.forEach((indictment) => {
-        indictmentMap[indictment.indictedObjectID] = indictment;
-    })
+  const indictmentMap = Object.fromEntries(
+    (indictments ?? []).map((i) => [String(i.indictedObjectID), i]),
+  );
 
-    var locationMap = {};
-    solution.locationList.forEach((location) => {
-            locationMap[location.id] = location;
-    })
+  const shifts = solution.courierShifts ?? [];
+  if (shifts.length === 0) return;
 
-    solution.vehicleList.forEach((vehicle) => {
-        let previous_location = [locationMap[vehicle.depot].lat, locationMap[vehicle.depot].lon];
-        let path_to_next = vehicle.pathToFirst;
-        let nr = 1;
-        const vcolor = getColor();
-        const vmarker = L.marker(previous_location).addTo(map);
-        vmarker.setIcon(getVehicleIcon(indictmentMap[vehicle.regNr]));
-        vmarker.bindPopup("<b>#"+vehicle.regNr+"</b><br>totalDistance=" + vehicle.totalDistance +
-                    "<br>maxCharge=" + vehicle.maxCharge +
-                    "<hr>" + getEntityPopoverContent(vehicle.regNr, indictmentMap));
-        vehicle.visits.forEach((visit) => {
-            const location = [locationMap[visit.location].lat, locationMap[visit.location].lon];
-            const marker = L.marker(location).addTo(map);
-            marker.setIcon(getVisitIcon(visit["@class"], indictmentMap[visit.name]));
-            marker.bindPopup("<b>#"+nr+"</b><br>id="+visit.name+"<br>arrival="
-            + formatTime(visit.arrivalTime) + "<br>charge=" + visit.vehicleCharge + "<br>after=" + visit.vehicleChargeAfterVisit +
-            "<hr>" + getEntityPopoverContent(visit.name, indictmentMap));
-            //const line = L.polyline([previous_location, location], {color: vcolor}).addTo(map);
-            // Draw a path
-            let previous_path_point = previous_location;
-            path_to_next.forEach((point => {
-                const line = L.polyline([previous_path_point, [point.lat, point.lon]], {color: vcolor}).addTo(map);
-                previous_path_point = [point.lat, point.lon]
-            }))
-            const last_line = L.polyline([previous_path_point, location], {color: vcolor}).addTo(map);
-            previous_location = location;
-            path_to_next = visit.pathToNext;
-            nr = nr + 1;
-        });
+  shifts.forEach((shift) => {
+    const visits = shift.visits ?? [];
+    if (visits.length === 0) return;
+    if (!visits[0].location) return;
 
-        let last_previous_path_point = previous_location;
-        path_to_next.forEach((point => {
-             const line = L.polyline([last_previous_path_point, [point.lat, point.lon]], {color: vcolor}).addTo(map);
-             last_previous_path_point = [point.lat, point.lon]
-        }))
-        const last_last_line = L.polyline([last_previous_path_point, [locationMap[vehicle.depot].lat, locationMap[vehicle.depot].lon]], {color: vcolor}).addTo(map);
-        //const line_back = L.polyline([previous_location, [vehicle.depot.lat, vehicle.depot.lon]],{color: vcolor}).addTo(map);
+    const routeColor = getColor();
+
+    visits.forEach((visit, idx) => {
+      if (!visit.location) return;
+
+      const location = [visit.location.lat, visit.location.lon];
+      const marker = L.marker(location).addTo(map);
+
+      marker.setIcon(getVisitIcon(visit.type, indictmentMap[String(visit.id)]));
+      marker.bindPopup(buildVisitPopup(visit, idx, shift, indictmentMap));
+
+      drawPathToNext(visit, location, visits[idx + 1], routeColor);
     });
+  });
+}
+
+function buildVisitPopup(visit, idx, shift, indictmentMap) {
+  const isRestaurant = visit.type === "RESTAURANT";
+
+  const restaurantBlock = isRestaurant
+    ? `<br>restaurantId=${visit.restaurantId ?? "null"}<br>restaurantChainId=${visit.restaurantChainId ?? "null"}`
+    : "";
+
+  const roadTime = visit.roadTime != null ? `${visit.roadTime}min` : "null";
+
+  return `
+    <b>visit id=${visit.id}</b> (this courier's ${idx + 1} visit)
+    <br>visit type=${visit.type ?? "null"}${restaurantBlock}
+    <br>departure time=${formatTime(visit.minuteTime) ?? "null"}
+    <br>road time=${roadTime}
+    <br>order id=${visit.orderId ?? "null"}
+    <hr>
+    <br>courier shift id=${shift.id ?? "null"}
+    <br>hotCapacity=${shift.hotCapacity}
+    <br>coldCapacity=${shift.coldCapacity}
+    <hr>
+    ${getEntityPopoverContent(String(visit.id), indictmentMap)}
+  `.trim();
+}
+
+function drawPathToNext(visit, startLocation, nextVisit, color) {
+  const path = visit.pathToNext;
+
+  if (!Array.isArray(path) || path.length === 0) return;
+
+  let prev = startLocation;
+
+  path.forEach((point) => {
+    if (!point || point.lat == null || point.lon == null) return;
+
+    const cur = [point.lat, point.lon];
+    L.polyline([prev, cur], { color }).addTo(map);
+    prev = cur;
+  });
+
+  if (nextVisit?.location) {
+    const end = [nextVisit.location.lat, nextVisit.location.lon];
+    L.polyline([prev, end], { color }).addTo(map);
+  }
 }
 
 function getEntityPopoverContent(entityId, indictmentMap) {
-    var popover_content = "";
-    const indictment = indictmentMap[entityId];
-    if (indictment != null) {
-        popover_content = popover_content + "Total score: <b>" + indictment.score + "</b> (" + indictment.matchCount + ")<br>";
-        indictment.constraintMatches.forEach((match) => {
-                  if (getHardScore(match.score) == 0) {
-                     popover_content = popover_content + match.constraintName + " : " + match.score + "<br>";
-                  } else {
-                     popover_content = popover_content + "<b>" + match.constraintName + " : " + match.score + "</b><br>";
-                  }
-            })
-    }
-    return popover_content;
+  const indictment = indictmentMap[entityId];
+  if (!indictment) return "";
+
+  let html = `Total score: <b>${indictment.score}</b> (${indictment.matchCount})<br>`;
+
+  (indictment.constraintMatches ?? []).forEach((match) => {
+    const line = `${match.constraintName} : ${match.score}<br>`;
+    html += getHardScore(match.score) == 0 ? line : `<b>${line}</b>`;
+  });
+
+  return html;
 }
 
-function getVisitIcon(v_type, indictment) {
-    if (indictment==undefined || getHardScore(indictment.score) == 0) {
-        return v_type == "lv.lu.eztf.dn.combopt.evrp.domain.Customer" ? customerIcon : chargingIcon;
-    } else {
-        return v_type == "lv.lu.eztf.dn.combopt.evrp.domain.Customer" ? customerIcon_red : chargingIcon_red;
-    }
+function getVisitIcon(visitType, indictment) {
+  const isCustomer = String(visitType) === "CUSTOMER";
+  const ok = !indictment || getHardScore(indictment.score) == 0;
 
-}
-
-function getVehicleIcon(indictment) {
-    if (indictment==undefined || getHardScore(indictment.score) == 0) {
-        return vehicleIcon;
-    } else {
-        return vehicleIcon_red;
-    }
-
+  if (isCustomer) return ok ? icons.customer : icons.customerRed;
+  return ok ? icons.restaurant : icons.restaurantRed;
 }
 
 function getColor() {
-   color_idx = (color_idx + 4) % colors.length;
-   return colors[color_idx];
+  colorIdx = (colorIdx + 4) % colors.length;
+  return colors[colorIdx];
 }
 
-function getScorePopoverContent(constraint_list) {
-    var popover_content = "";
-    constraint_list.forEach((constraint) => {
-          if (getHardScore(constraint.score) == 0) {
-             popover_content = popover_content + constraint.name + " : " + constraint.score + "<br>";
-          } else {
-             popover_content = popover_content + "<b>" + constraint.name + " : " + constraint.score + "</b><br>";
-          }
-    })
-    return popover_content;
+function getScorePopoverContent(constraints) {
+  let html = "";
+  (constraints ?? []).forEach((constraint) => {
+    const line = `${constraint.name} : ${constraint.score}<br>`;
+    html += getHardScore(constraint.score) == 0 ? line : `<b>${line}</b>`;
+  });
+  return html;
 }
 
 function getHardScore(score) {
-   return score.slice(0,score.indexOf("hard"))
+  return score.slice(0, score.indexOf("hard"));
 }
 
-function getSoftScore(score) {
-   return score.slice(score.indexOf("hard/"),score.indexOf("soft"))
-}
-
-function formatTime(timeInSeconds) {
-        if (timeInSeconds != null) {
-            const HH = Math.floor(timeInSeconds / 3600);
-            const MM = Math.floor((timeInSeconds % 3600) / 60);
-            const SS = Math.floor(timeInSeconds % 60);
-            return HH + ":" + MM + ":" + SS;
-        } else return "null";
+function formatTime(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
