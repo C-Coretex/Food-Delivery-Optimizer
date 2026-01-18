@@ -74,6 +74,20 @@ function renderScore(analysis) {
   initPopovers();
 }
 
+// marker overlap fix
+function jitterLatLng(lat, lon, index, total, radiusMeters = 10) {
+  if (total <= 1) return [lat, lon];
+
+  const angle = (2 * Math.PI * index) / total;
+
+  const dLat = (radiusMeters / 111320) * Math.sin(angle);
+  const dLon =
+    (radiusMeters / (111320 * Math.cos((lat * Math.PI) / 180))) *
+    Math.cos(angle);
+
+  return [lat + dLat, lon + dLon];
+}
+
 function renderRoutes(solution, indictments) {
   $("#solutionTitle").text(
     `Version 18/Jan/2026${solution.name ?? ""}  ${solution.solverStatus}`,
@@ -86,25 +100,87 @@ function renderRoutes(solution, indictments) {
   const shifts = solution.courierShifts ?? [];
   if (shifts.length === 0) return;
 
-  shifts.forEach((shift) => {
+  const overlayLayers = {};
+  const shiftGroups = [];
+
+  shifts.forEach((shift, shiftIdx) => {
     const visits = shift.visits ?? [];
     if (visits.length === 0) return;
     if (!visits[0].location) return;
 
     const routeColor = getColor();
 
+    const shiftLabel = `CourierShift ${shiftIdx + 1}${shift.id != null ? ` (id=${shift.id})` : ""}`;
+    const shiftGroup = L.layerGroup().addTo(map);
+
+    overlayLayers[shiftLabel] = shiftGroup;
+    shiftGroups.push(shiftGroup);
+
+    const coordKey = (loc) => `${loc.lat.toFixed(6)},${loc.lon.toFixed(6)}`;
+    const dupMap = new Map();
+
+    visits.forEach((v) => {
+      if (!v.location) return;
+      const key = coordKey(v.location);
+      const arr = dupMap.get(key) ?? [];
+      arr.push(v.id);
+      dupMap.set(key, arr);
+    });
+
+    const dupSeen = new Map();
+
     visits.forEach((visit, idx) => {
       if (!visit.location) return;
 
-      const location = [visit.location.lat, visit.location.lon];
-      const marker = L.marker(location).addTo(map);
+      const key = coordKey(visit.location);
+      const total = (dupMap.get(key) ?? []).length;
+      const seen = dupSeen.get(key) ?? 0;
+
+      const [jLat, jLon] = jitterLatLng(
+        visit.location.lat,
+        visit.location.lon,
+        seen,
+        total,
+      );
+
+      dupSeen.set(key, seen + 1);
+
+      const marker = L.marker([jLat, jLon]).addTo(shiftGroup);
 
       marker.setIcon(getVisitIcon(visit.type, indictmentMap[String(visit.id)]));
       marker.bindPopup(buildVisitPopup(visit, idx, shift, indictmentMap));
 
-      drawPathToNext(visit, location, visits[idx + 1], routeColor);
+      drawPathToNext(
+        visit,
+        [jLat, jLon],
+        visits[idx + 1],
+        routeColor,
+        shiftGroup,
+      );
     });
   });
+
+  if (map._shiftLayersControl) {
+    map.removeControl(map._shiftLayersControl);
+  }
+  map._shiftLayersControl = L.control
+    .layers(null, overlayLayers, {
+      collapsed: false,
+    })
+    .addTo(map);
+
+  const allLayers = shiftGroups.flatMap((g) => g.getLayers());
+  const latLngs = [];
+  allLayers.forEach((layer) => {
+    if (layer.getLatLng) latLngs.push(layer.getLatLng());
+    if (layer.getLatLngs) {
+      const pts = layer.getLatLngs();
+      pts.flat?.(10)?.forEach?.((p) => p?.lat != null && latLngs.push(p));
+    }
+  });
+  if (latLngs.length > 0) {
+    map.fitBounds(L.latLngBounds(latLngs), { padding: [20, 20] });
+  }
 }
 
 function buildVisitPopup(visit, idx, shift, indictmentMap) {
@@ -131,9 +207,8 @@ function buildVisitPopup(visit, idx, shift, indictmentMap) {
   `.trim();
 }
 
-function drawPathToNext(visit, startLocation, nextVisit, color) {
+function drawPathToNext(visit, startLocation, nextVisit, color, layerGroup) {
   const path = visit.pathToNext;
-
   if (!Array.isArray(path) || path.length === 0) return;
 
   let prev = startLocation;
@@ -142,13 +217,13 @@ function drawPathToNext(visit, startLocation, nextVisit, color) {
     if (!point || point.lat == null || point.lon == null) return;
 
     const cur = [point.lat, point.lon];
-    L.polyline([prev, cur], { color }).addTo(map);
+    L.polyline([prev, cur], { color }).addTo(layerGroup);
     prev = cur;
   });
 
   if (nextVisit?.location) {
     const end = [nextVisit.location.lat, nextVisit.location.lon];
-    L.polyline([prev, end], { color }).addTo(map);
+    L.polyline([prev, end], { color }).addTo(layerGroup);
   }
 }
 
