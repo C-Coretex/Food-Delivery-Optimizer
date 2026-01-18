@@ -19,8 +19,8 @@ import java.util.List;
 public class FoodDeliveryOptimizerApp {
 
     public static void main(String[] args) {
-        //runSolver();
-        runBenchmark();
+        runSolver();
+        //runBenchmark();
     }
     private static void runSolver() {
         // --- Courier shifts ---
