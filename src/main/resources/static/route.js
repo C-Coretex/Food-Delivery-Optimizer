@@ -100,6 +100,12 @@ function renderRoutes(solution, indictments) {
   }
 
   shifts.forEach((shift) => {
+    const visits = shift.visits ?? [];
+
+    if (visits.length === 0) {
+      return;
+    }
+
     const shiftId = String(shift.id);
 
     var shift_badge = "badge bg-danger";
@@ -131,13 +137,6 @@ function renderRoutes(solution, indictments) {
           "</span></a>",
       ),
     );
-
-    const visits = shift.visits ?? [];
-    if (visits.length === 0) {
-      container.append($("<div class='ms-3'>no visits</div>"));
-      container.append($("<br>"));
-      return;
-    }
 
     var visit_nr = 1;
     visits.forEach((visit) => {
