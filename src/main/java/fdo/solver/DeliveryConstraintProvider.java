@@ -23,8 +23,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 courierShiftDurationBetween3And6Hours(factory),
 
                 //courier-order hard
-                hotCapacityExceeded(factory),
-                coldCapacityExceeded(factory),
+                capacityExceeded(factory),
                 pickupBeforeDelivery(factory),
                 sameOrderSameCourier(factory),
                 deliveryRequiresPickup(factory),
@@ -83,7 +82,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT && v2.getCourier() != null)
                 // If one is assigned and the other isn't, OR they are assigned to different couriers
                 .filter((cust, rest) -> !Objects.equals(cust.getCourier(), rest.getCourier()))
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ofHard(3))
                 .asConstraint("Order visits must be on same courier");
     }
 
@@ -136,75 +135,11 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      * Hot food capacity per courier shift.
      * Sum HOT food volumes of all CUSTOMER visits in the shift.
      */
-    private Constraint hotCapacityExceeded(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
-                .join(
-                        Visit.class,
-                        Joiners.equal(Visit::getCourier),
-                        Joiners.lessThanOrEqual(Visit::getMinuteTime),
-                        Joiners.greaterThan(Visit::getMinuteTime),
-                        Joiners.filtering((current, other) ->
-                                other.getType() == Visit.VisitType.RESTAURANT &&
-                                        other.getOrder().getFoods().stream()
-                                                .anyMatch(f -> f.getTemperature() == Food.Temperature.HOT)
-                        )
-                )
-                .groupBy(
-                        (current, pickup) -> current,
-                        ConstraintCollectors.sum(
-                                (current, pickup) ->
-                                        pickup.getOrder().getFoods().stream()
-                                                .filter(f -> f.getTemperature() == Food.Temperature.HOT)
-                                                .mapToInt(Food::getVolume)
-                                                .sum()
-                        )
-                )
-                .filter((current, hotVolume) ->
-                        hotVolume > current.getCourier().getHotCapacity()
-                )
+    private Constraint capacityExceeded(ConstraintFactory factory) {
+        return factory.forEach(CourierShift.class)
+                .filter(CourierShift::isAnyCapacityExceeded)
                 .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Hot capacity exceeded over time");
-    }
-
-
-    /**
-     * HARD:
-     * Cold food capacity per courier shift.
-     */
-    private Constraint coldCapacityExceeded(ConstraintFactory factory) {
-        return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
-
-                .join(
-                        Visit.class,
-                        Joiners.equal(Visit::getCourier),
-                        Joiners.lessThanOrEqual(Visit::getMinuteTime),
-                        Joiners.greaterThan(Visit::getMinuteTime),
-                        Joiners.filtering((current, pickup) ->
-                                pickup.getType() == Visit.VisitType.RESTAURANT &&
-                                        pickup.getOrder().getFoods().stream()
-                                                .anyMatch(f -> f.getTemperature() == Food.Temperature.COLD)
-                        )
-                )
-
-                .groupBy(
-                        (current, pickup) -> current,
-                        ConstraintCollectors.sum(
-                                (current, pickup) ->
-                                        pickup.getOrder().getFoods().stream()
-                                                .filter(f -> f.getTemperature() == Food.Temperature.COLD)
-                                                .mapToInt(Food::getVolume)
-                                                .sum()
-                        )
-                )
-
-                .filter((current, coldVolume) ->
-                        coldVolume > current.getCourier().getColdCapacity()
-                )
-
-                .penalize(HardSoftScore.ONE_HARD)
-                .asConstraint("Cold capacity exceeded over time");
+                .asConstraint("Hot or Cold capacity exceeded over time");
     }
 
 
@@ -252,7 +187,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                     // Violation if Pickup Time >= Delivery Time
                     return rest.getMinuteTime() >= cust.getMinuteTime();
                 })
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ofHard(3))
                 .asConstraint("Pickup must occur before delivery");
     }
     /**
