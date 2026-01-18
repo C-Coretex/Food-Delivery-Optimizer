@@ -61,7 +61,7 @@ public class FoodDeliveryOptimizerController {
         return jobIdToJob.keySet();
     }
 
-    @Operation(summary = "Submit a FDO to start solving as soon as CPU resources are available.")
+    @Operation(summary = "Submit an FDO to start solving as soon as CPU resources are available.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "202",
                     description = "The job ID. Use that ID to get the solution with the other methods.",
@@ -84,6 +84,12 @@ public class FoodDeliveryOptimizerController {
         return jobId;
     }
 
+    @Operation(summary = "Submit an FDO (with our custom JSON template) to start solving as soon as CPU resources are available.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202",
+                    description = "The job ID. Use that ID to get the solution with the other methods.",
+                    content = @Content(mediaType = MediaType.TEXT_PLAIN_VALUE,
+                            schema = @Schema(implementation = String.class))) })
     @PostMapping(
             value = "/solve-custom",
             consumes = MediaType.APPLICATION_JSON_VALUE,
