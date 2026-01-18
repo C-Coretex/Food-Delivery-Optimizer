@@ -53,7 +53,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         (v, o) -> {
                             Integer time = v.getMinuteTime();
                             if (time == null) return 0;
-                            if (time < o.getEarliestMinute() || time > o.getLatestMinute()) return Math.max(o.getEarliestMinute() - time, time - o.getLatestMinute())/10;
+                            if (time < o.getEarliestMinute() || time > o.getLatestMinute()) return 1;
                             return 0;
                         })
                 .asConstraint("Order must be delivered in time");
@@ -77,13 +77,20 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
      */
     private Constraint sameOrderSameCourier(ConstraintFactory factory) {
         return factory.forEach(Visit.class)
-                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER)
-                .join(Visit.class, Joiners.equal(Visit::getOrder))
-                .filter((v1, v2) -> v2.getType() == Visit.VisitType.RESTAURANT && v2.getCourier() != null)
-                // If one is assigned and the other isn't, OR they are assigned to different couriers
-                .filter((cust, rest) -> !Objects.equals(cust.getCourier(), rest.getCourier()))
+                // 1. Start with the Customer visit
+                .filter(v -> v.getType() == Visit.VisitType.CUSTOMER && v.getCourier() != null)
+                // 2. Penalize ONLY if there does NOT exist a restaurant visit...
+                .ifNotExists(Visit.class,
+                        // ...belonging to the same order
+                        Joiners.equal(Visit::getOrder),
+                        // ...assigned to the same courier
+                        Joiners.equal(Visit::getCourier),
+                        // ...that is actually a restaurant
+                        Joiners.filtering((c,v) -> v.getType() == Visit.VisitType.RESTAURANT)
+                )
+                // 3. If no such restaurant exists, the order is broken
                 .penalize(HardSoftScore.ofHard(3))
-                .asConstraint("Order visits must be on same courier");
+                .asConstraint("At least one restaurant must be on the same courier as the customer");
     }
 
     /**
@@ -95,7 +102,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .filter(v -> v.getType() == Visit.VisitType.RESTAURANT && v.getCourier() != null)
                 .filter(v -> !Objects.equals(v.getRestaurant().getChainId(), v.getOrder().getChainId())
                         || v.getRestaurant().getStartMinute() > v.getMinuteTime() || v.getRestaurant().getEndMinute() < v.getMinuteTime())
-                .penalize(HardSoftScore.ofHard(10))
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Order must be processed in correct restaurant chain");
     }
 
@@ -157,7 +164,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         Joiners.filtering((cust, rest) ->
                                 rest.getType() == Visit.VisitType.RESTAURANT &&
                                         rest.getCourier() != null)) // No assigned restaurant pickup found
-                .penalize(HardSoftScore.ONE_HARD)
+                .penalize(HardSoftScore.ofHard(3))
                 .asConstraint("Delivery requires pickup");
     }
 
@@ -183,7 +190,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                         Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT && rest.getCourier() != null))
                 .filter((cust, rest) -> {
                     // If times are null (unassigned), we can't compare, so skip
-                    if (cust.getMinuteTime() == null || rest.getMinuteTime() == null) return false;
+                    if (cust.getMinuteTime() == null || rest.getMinuteTime() == null || cust.getCourier() != rest.getCourier()) return false;
                     // Violation if Pickup Time >= Delivery Time
                     return rest.getMinuteTime() >= cust.getMinuteTime();
                 })
@@ -228,7 +235,7 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                     int d = shift.getDurationMinutes();
                     return d > 360;
                 })
-                .penalize(HardSoftScore.ONE_HARD, shift -> (shift.getDurationMinutes()/360) * 5)
+                .penalize(HardSoftScore.ONE_HARD)
                 .asConstraint("Courier shift must not be more than 6 hours");
     }
 
