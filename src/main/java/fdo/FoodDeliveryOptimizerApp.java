@@ -24,16 +24,12 @@ public class FoodDeliveryOptimizerApp {
     }
     private static void runSolver() {
         // --- Courier shifts ---
-        String path = "src/main/resources/DeliveryProblem30.json";
+        String path = "src/main/resources/DeliveryProblem100.json";
         DeliverySolution problem = JsonIO.read_json(path); //New json solution
 
         List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
         problem.setVisitList(visits);
 
-        //assign random visits to couriers
-        //var courier = problem.getCourierShifts().get(0);
-
-        //courier.setVisits(visits);
 
         startSolution(problem);
     }
@@ -41,17 +37,27 @@ public class FoodDeliveryOptimizerApp {
         PlannerBenchmarkFactory benchmarkFactory = PlannerBenchmarkFactory.createFromXmlResource(
                 "benchmarkConfig.xml");
 
-        //String path = "src/main/resources/DeliveryProblemSmall.json";
-        //DeliverySolution problem = JsonIO.read_json(path);
-        //List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
-        //problem.setVisitList(visits);
+        String path = "src/main/resources/DeliveryProblemSmall.json";
+        DeliverySolution problem = JsonIO.read_json(path);
+        List<Visit> visits = Generator.VisitGenerator.generateAll(problem);
+        problem.setVisitList(visits);
 
         String path2 = "src/main/resources/DeliveryProblem30.json";
         DeliverySolution problem2 = JsonIO.read_json(path2);
         List<Visit> visits2 = Generator.VisitGenerator.generateAll(problem2);
         problem2.setVisitList(visits2);
 
-        PlannerBenchmark benchmark = benchmarkFactory.buildPlannerBenchmark(problem2);
+        String path3 = "src/main/resources/DeliveryProblem50.json";
+        DeliverySolution problem3 = JsonIO.read_json(path3);
+        List<Visit> visits3 = Generator.VisitGenerator.generateAll(problem3);
+        problem3.setVisitList(visits3);
+
+        String path4 = "src/main/resources/DeliveryProblem100.json";
+        DeliverySolution problem4 = JsonIO.read_json(path4);
+        List<Visit> visits4 = Generator.VisitGenerator.generateAll(problem4);
+        problem4.setVisitList(visits4);
+
+        PlannerBenchmark benchmark = benchmarkFactory.buildPlannerBenchmark(problem, problem2, problem3, problem4);
         benchmark.benchmarkAndShowReportInBrowser();
     }
 

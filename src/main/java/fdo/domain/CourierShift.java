@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @PlanningEntity
@@ -59,5 +60,48 @@ public class CourierShift {
         Integer end = getEndMinute();
         if (start == null || end == null) return 0;
         return end - start;
+    }
+
+    public boolean isAnyCapacityExceeded() {
+        int currentHotVolume = 0;
+        int currentColdVolume = 0;
+
+        int hotCap = this.getHotCapacity();
+        int coldCap = this.getColdCapacity();
+
+        // 1. Sort visits chronologically
+        List<Visit> sortedVisits = this.getVisits().stream()
+                .sorted(Comparator.comparingInt(Visit::getMinuteTime))
+                .toList();
+
+        // 2. Single-pass evaluation
+        for (Visit visit : sortedVisits) {
+            List<Food> foods = visit.getOrder().getFoods();
+
+            // Calculate volumes for this specific visit
+            int hotChange = foods.stream()
+                    .filter(f -> f.getTemperature() == Food.Temperature.HOT)
+                    .mapToInt(Food::getVolume).sum();
+
+            int coldChange = foods.stream()
+                    .filter(f -> f.getTemperature() == Food.Temperature.COLD)
+                    .mapToInt(Food::getVolume).sum();
+
+            // 3. Update load based on visit type
+            if (visit.getType() == Visit.VisitType.RESTAURANT) {
+                currentHotVolume += hotChange;
+                currentColdVolume += coldChange;
+            } else {
+                currentHotVolume -= hotChange;
+                currentColdVolume -= coldChange;
+            }
+
+            // 4. Check for violations in either compartment
+            if (currentHotVolume > hotCap || currentColdVolume > coldCap) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

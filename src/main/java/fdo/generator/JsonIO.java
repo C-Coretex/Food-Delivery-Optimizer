@@ -127,11 +127,11 @@ public class JsonIO {
 
         // CourierShift
         List<CourierShift> couriers = new ArrayList<>();
-        for (int i = 1; i <= 50; i++) {
+        for (int i = 1; i <= orders.size() * 10; i++) {
             CourierShift courier = new CourierShift(
                     "C" + i,
-                    12,      // hotCapacity
-                    6                  // coldCapacity
+                    20,      // hotCapacity
+                    20                  // coldCapacity
             );
             courier.setVisits(new ArrayList<>());
             couriers.add(courier);

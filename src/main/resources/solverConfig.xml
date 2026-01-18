@@ -29,33 +29,22 @@
 
     <localSearch>
         <termination>
-            <secondsSpentLimit>20</secondsSpentLimit>
+            <diminishedReturns />
         </termination>
-        <unionMoveSelector>
-            <listChangeMoveSelector />
-            <listSwapMoveSelector />
-            <subListChangeMoveSelector>
-                <maximumSubListSize>10</maximumSubListSize>
-            </subListChangeMoveSelector>
-        </unionMoveSelector>
         <acceptor>
-            <lateAcceptanceSize>400</lateAcceptanceSize>
+            <lateAcceptanceSize>1000</lateAcceptanceSize>
         </acceptor>
         <forager>
-            <acceptedCountLimit>100</acceptedCountLimit>
+            <acceptedCountLimit>300</acceptedCountLimit>
         </forager>
     </localSearch>
 
     <localSearch>
-        <unionMoveSelector>
-            <listChangeMoveSelector />
-            <listSwapMoveSelector />
-            <subListChangeMoveSelector>
-                <maximumSubListSize>10</maximumSubListSize>
-            </subListChangeMoveSelector>
-        </unionMoveSelector>
+        <termination>
+            <diminishedReturns />
+        </termination>
         <acceptor>
-            <simulatedAnnealingStartingTemperature>4hard/500soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>3hard/500soft</simulatedAnnealingStartingTemperature>
         </acceptor>
         <forager>
             <acceptedCountLimit>100</acceptedCountLimit>

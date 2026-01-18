@@ -103,7 +103,12 @@ public class Visit {
 
         // IMPORTANT: If we arrive before the order is ready, we MUST wait.
         // This pushes the time forward and ensures constraints are calculated correctly.
-        int readyTime = order.getEarliestMinute();
+        int readyTime = 0;
+        if(this.getType() == VisitType.CUSTOMER)
+            readyTime = order.getEarliestMinute();
+        else if(this.getRestaurant() != null)
+            readyTime = getRestaurant().getStartMinute();
+
         this.setMinuteTime(Math.max(arrivalTime, readyTime));
     }
 
