@@ -2,9 +2,10 @@ package fdo.solver;
 
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import ai.timefold.solver.core.api.score.constraint.ConstraintMatch;
+import fdo.domain.CourierShift;
+import fdo.domain.Visit;
 import lombok.Getter;
 import lombok.Setter;
-import fdo.domain.CourierShift;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,13 +21,25 @@ public class SimpleIndictmentObject {
     private int matchCount;
     private List<SimpleConstraintMatch> constraintMatches = new ArrayList<>();
 
-    public SimpleIndictmentObject(Object indictedObject, HardSoftScore score, int matchCount, Set<ConstraintMatch<HardSoftScore>> constraintMatches) {
-        this.indictedObjectID = indictedObject instanceof CourierShift ? ((CourierShift) indictedObject).getId() : "0";
+    public SimpleIndictmentObject(
+            Object indictedObject,
+            HardSoftScore score,
+            int matchCount,
+            Set<ConstraintMatch<HardSoftScore>> constraintMatches
+    ) {
+        if (indictedObject instanceof CourierShift cs) {
+            this.indictedObjectID = cs.getId();
+        } else if (indictedObject instanceof Visit v) {
+            this.indictedObjectID = String.valueOf(v.getId());
+        } else {
+            this.indictedObjectID = String.valueOf(indictedObject);
+        }
 
         this.indictedObjectClass = indictedObject.getClass().getSimpleName();
-
         this.score = score;
         this.matchCount = matchCount;
-        this.constraintMatches = constraintMatches.stream().map(SimpleConstraintMatch::new).collect(Collectors.toList());
+        this.constraintMatches = constraintMatches.stream()
+                .map(SimpleConstraintMatch::new)
+                .collect(Collectors.toList());
     }
 }

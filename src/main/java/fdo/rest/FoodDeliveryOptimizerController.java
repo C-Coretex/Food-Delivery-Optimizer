@@ -10,9 +10,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import fdo.domain.DeliverySolution;
 import fdo.domain.Router;
 import fdo.domain.Visit;
+import fdo.dto.SimpleDeliverySolution;
 import fdo.generator.Generator;
 import fdo.generator.JsonIO;
 import fdo.solver.SimpleIndictmentObject;
+import fdo.solver.SimpleScoreAnalysis;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -126,12 +128,13 @@ public class FoodDeliveryOptimizerController {
                             schema = @Schema(implementation = ErrorInfo.class)))
     })
     @GetMapping(value = "/{jobId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public DeliverySolution getDeliverySolution(
-            @Parameter(description = "The job ID returned by the POST method.") @PathVariable("jobId") String jobId) {
-        DeliverySolution deliverySolution = getDeliverySolutionAndCheckForExceptions(jobId);
+    public SimpleDeliverySolution getDeliverySolution(
+            @Parameter(description = "The job ID returned by the POST method.") @PathVariable("jobId") String jobId
+    ) {
+        DeliverySolution solution = getDeliverySolutionAndCheckForExceptions(jobId);
         SolverStatus solverStatus = solverManager.getSolverStatus(jobId);
-        deliverySolution.setSolverStatus(solverStatus);
-        return deliverySolution;
+
+        return SimpleDeliverySolution.from(solution, solverStatus);
     }
 
     @Operation(
@@ -148,10 +151,13 @@ public class FoodDeliveryOptimizerController {
                             schema = @Schema(implementation = ErrorInfo.class)))
     })
     @GetMapping(value = "/score/{jobId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ScoreAnalysis<HardSoftScore> analyze(
-            @Parameter(description = "The job ID returned by the POST method.") @PathVariable("jobId") String jobId) {
+    public SimpleScoreAnalysis analyze(
+            @Parameter(description = "The job ID returned by the POST method.") @PathVariable("jobId") String jobId
+    ) {
         DeliverySolution deliverySolution = getDeliverySolutionAndCheckForExceptions(jobId);
-        return solutionManager.analyze(deliverySolution);
+        ScoreAnalysis<HardSoftScore> analysis = solutionManager.analyze(deliverySolution);
+
+        return SimpleScoreAnalysis.from(analysis);
     }
 
     @Operation(
