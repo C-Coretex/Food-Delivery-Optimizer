@@ -174,8 +174,8 @@ function renderRoutes(solution, indictments) {
         lines.push("orderId: " + visit.orderId);
       }
 
-      if (visit.restaurantName != null) {
-        lines.push("restaurant: " + visit.restaurantName);
+      if (visit.restaurantId != null) {
+        lines.push("restaurant: " + visit.restaurantId);
       }
 
       container.append(

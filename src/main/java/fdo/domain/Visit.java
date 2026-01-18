@@ -5,9 +5,12 @@ import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.CascadingUpdateShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.graphhopper.util.shapes.GHPoint;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 @PlanningEntity
@@ -139,5 +142,14 @@ public class Visit {
             // Delivery time at customer
             return 3; // minutes
         }
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public List<GHPoint> getPathToNext() {
+        if (this.getNextVisit() == null) {
+            return null;
+        }
+
+        return this.getLocation().pathTo(this.getNextVisit().getLocation());
     }
 }
