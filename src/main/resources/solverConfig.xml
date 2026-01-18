@@ -37,12 +37,13 @@
             <subListChangeMoveSelector>
                 <maximumSubListSize>10</maximumSubListSize>
             </subListChangeMoveSelector>
+            <kOptListMoveSelector />
         </unionMoveSelector>
         <acceptor>
-            <lateAcceptanceSize>400</lateAcceptanceSize>
+            <lateAcceptanceSize>1000</lateAcceptanceSize>
         </acceptor>
         <forager>
-            <acceptedCountLimit>100</acceptedCountLimit>
+            <acceptedCountLimit>300</acceptedCountLimit>
         </forager>
     </localSearch>
 
@@ -53,9 +54,10 @@
             <subListChangeMoveSelector>
                 <maximumSubListSize>10</maximumSubListSize>
             </subListChangeMoveSelector>
+            <kOptListMoveSelector />
         </unionMoveSelector>
         <acceptor>
-            <simulatedAnnealingStartingTemperature>4hard/500soft</simulatedAnnealingStartingTemperature>
+            <simulatedAnnealingStartingTemperature>6hard/500soft</simulatedAnnealingStartingTemperature>
         </acceptor>
         <forager>
             <acceptedCountLimit>100</acceptedCountLimit>

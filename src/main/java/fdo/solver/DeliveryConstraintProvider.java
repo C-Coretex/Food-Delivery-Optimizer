@@ -252,14 +252,16 @@ public class DeliveryConstraintProvider implements ConstraintProvider {
                 .join(Visit.class,
                         Joiners.equal(Visit::getOrder),
                         Joiners.filtering((cust, rest) -> rest.getType() == Visit.VisitType.RESTAURANT))
-                .penalize(HardSoftScore.ONE_HARD,
-                        (cust, rest) -> {
-                            Integer dTime = cust.getMinuteTime();
-                            Integer pTime = rest.getMinuteTime();
-                            if (dTime == null || pTime == null) return 0;
-                            return calculateDeliveryTimePenalty(cust, rest) > 0 ? 1 : 0;
-                        })
+                .filter((c,r) -> maxDeliveryPenalty(c,r) > 0)
+                .penalize(HardSoftScore.ONE_HARD, (c,r) -> maxDeliveryPenalty(c,r))
                 .asConstraint("Food max delivery time exceeded");
+    }
+
+    private int maxDeliveryPenalty(Visit cust, Visit rest) {
+        Integer dTime = cust.getMinuteTime();
+        Integer pTime = rest.getMinuteTime();
+        if (dTime == null || pTime == null) return 0;
+        return calculateDeliveryTimePenalty(cust, rest) > 0 ? 1 : 0;
     }
 
     // private method that calculates the penalty
